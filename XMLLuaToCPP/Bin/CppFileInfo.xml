@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- add by freeeyes -->
+<!-- support string,int,void* -->
+<configer ProjectName="autotest">
+	<CppFile LuaFileName="LuaAPI_Player" desc="group Player API">
+		<CppFunc FuncName="Get_Player_Info" desc="Get Player Info point">
+			<Param ParamName="nPlayerID" ParamType="in" ParamClass="int" ParamLength="4" />
+			<Param ParamName="nRetPlayerID" ParamType="out" ParamClass="int" ParamLength="4" />
+			<!-- <Param ParamName="pPlayerInfo" ParamType="out" ParamClass="_PlayerInfo" ParamLength="4" /> -->
+		</CppFunc>
+		<CppFunc FuncName="Get_Player_Name" desc="Get Player Name">
+			<!-- <Param ParamName="pPlayerInfo" ParamType="in" ParamClass="_PlayerInfo" ParamLength="4" /> -->
+			<Param ParamName="nPlayerID" ParamType="in" ParamClass="int" ParamLength="4" />
+			<Param ParamName="szPlayerName" ParamType="out" ParamClass="string" ParamLength="50" />
+		</CppFunc>
+		<CppFunc FuncName="Get_Player_ID" desc="Get Player ID">
+			<!-- <Param ParamName="pPlayerInfo" ParamType="in" ParamClass="_PlayerInfo" ParamLength="4" /> -->
+			<Param ParamName="nPlayerID" ParamType="in" ParamClass="int" ParamLength="4" />
+			<Param ParamName="nRetPlayerID" ParamType="out" ParamClass="int" ParamLength="4" />
+		</CppFunc>
+	</CppFile>
+</configer>

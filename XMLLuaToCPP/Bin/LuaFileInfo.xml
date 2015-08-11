@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- add by freeeyes -->
+<!-- support string,int,void* -->
+<configer ProjectName="autotest">
+	<LuaFile LuaFileName="TestLua" desc="test">
+		<LuaFunc FuncName="test_func_one" desc="lua test funcion one">
+			<Param ParamName="nindex" ParamType="in" ParamClass="int" ParamLength="4" />
+			<Param ParamName="nRetindex" ParamType="out" ParamClass="int" ParamLength="4" />
+		</LuaFunc>
+		<LuaFunc FuncName="test_func_two" desc="lua test funcion two">
+			<Param ParamName="nindex" ParamType="in" ParamClass="int" ParamLength="4" />
+		</LuaFunc>		
+	</LuaFile>
+</configer>
