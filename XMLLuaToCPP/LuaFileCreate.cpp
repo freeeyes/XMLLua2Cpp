@@ -13,7 +13,7 @@ bool Creat_Lua_Files( _Project_Lua_Info* pLuaProject )
 #ifdef WIN32
 	_mkdir(pLuaProject->m_szProjectName);
 #else
-	mkdir(pLuaProject->m_szProjectName);
+	mkdir(pLuaProject->m_szProjectName, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH);
 #endif
 
 
@@ -91,7 +91,7 @@ bool Creat_Lua_Files( _Project_Lua_Info* pLuaProject )
 					}
 					nPos++;
 				}
-				
+
 			}
 
 			sprintf_safe(szTemp, 200, "\n}\n\n");

@@ -19,7 +19,7 @@ void Create_Lua_Environment( _Project_Lua_Info* pLuaProject )
 #ifdef WIN32
 	_mkdir(szTempPath);
 #else
-	mkdir(szTempPath);
+	mkdir(szTempPath, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH);
 #endif
 
 	//把Lua文件拷贝过去
@@ -39,7 +39,7 @@ void Create_Lua_Environment( _Project_Lua_Info* pLuaProject )
 #ifdef WIN32
 	_mkdir(szTempPath);
 #else
-	mkdir(szTempPath);
+	mkdir(szTempPath, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH);
 #endif
 
 	//拷贝LuaCommon.h文件
@@ -159,7 +159,7 @@ bool Create_Cpp_API_Files( _Project_Cpp_Info* pCppProject )
 					nPos++;
 				}
 			}
-			
+
 			sprintf_safe(szTemp, 200, "\n");
 			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
@@ -191,7 +191,7 @@ bool Create_Cpp_API_Files( _Project_Cpp_Info* pCppProject )
 					nPos++;
 				}
 			}
-			
+
 			sprintf_safe(szTemp, 200, "\t//add your API code at here.\n\n", obj_Function_Info.m_szFunctionName);
 			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
