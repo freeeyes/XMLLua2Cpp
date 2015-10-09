@@ -37,6 +37,9 @@ int main(int argc, char* argv[])
 	Create_Cpp_API_Files(&obj_Project_Cpp_Info);
 	Create_Cpp_Test_Files(&obj_Project_Lua_Info, &obj_Project_Cpp_Info);
 
+	//生成makefile文件
+	CreateMakefile(&obj_Project_Cpp_Info);
+
 	getchar();
 
 	return 0;

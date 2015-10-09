@@ -94,16 +94,21 @@ bool Create_Cpp_API_Files( _Project_Cpp_Info* pCppProject )
 		sprintf_safe(szTemp, 200, "#include <stdio.h>\n\n");
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
+		sprintf_safe(szTemp, 200, "extern \"C\"\n");
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		sprintf_safe(szTemp, 200, "{\n");
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 		//编写函数
 		for(int j = 0; j <  (int)pCppProject->m_vecCppFileList[i].m_vecFunctionList.size(); j++)
 		{
 			_Function_Info& obj_Function_Info = (_Function_Info& )pCppProject->m_vecCppFileList[i].m_vecFunctionList[j];
-			sprintf_safe(szTemp, 200, "//%s\n", obj_Function_Info.m_szDesc);
+			sprintf_safe(szTemp, 200, "\t//%s\n", obj_Function_Info.m_szDesc);
 			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-			sprintf_safe(szTemp, 200, "int LuaFn_%s(lua_State* L);\n", obj_Function_Info.m_szFunctionName);
+			sprintf_safe(szTemp, 200, "\tint LuaFn_%s(lua_State* L);\n", obj_Function_Info.m_szFunctionName);
 			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 		}
-
+		sprintf_safe(szTemp, 200, "}\n");
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
 		sprintf_safe(szTemp, 200, "#endif\n");
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
@@ -547,5 +552,120 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 
 
 	fclose(pFile);
+	return true;
+}
+
+bool CreateMakefile( _Project_Cpp_Info* pCppProject )
+{
+	char szTemp[1024]     = {'\0'};
+	char szPathFile[200]  = {'\0'};
+
+	//自动生成makefile.define文件
+	sprintf_safe(szPathFile, 200, "%s/Makefile.define", 
+		pCppProject->m_szProjectName);
+
+	FILE* pFile = fopen(szPathFile, "w");
+	if(NULL == pFile)
+	{
+		return false;
+	}
+
+	sprintf_safe(szTemp, 200, "# *****************************\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "# predefine\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "# *****************************\n\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	sprintf_safe(szTemp, 200, "CC = g++\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "AR = ar\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "CFLAGS = -g -O2 -D__LINUX__\n\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	sprintf_safe(szTemp, 200, "#set Lua lib path\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "INCLUDES = -I./ -I../ -I/usr/include  -I./Include\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "LIBS = -L/usr/lib64 -L/usr/lib -L/usr/local/lib64 -L./ -L./Lib -L${THRIFT_LIB}  -L../ -ldl -lrt -llua\n\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "# *****************************\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "# rule\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "# *****************************\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "# Here are some rules for converting .cpp -> .o\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, ".SUFFIXES: .cpp .o\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, ".cpp.o:\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\t@$(CC) -fPIC $(CFLAGS) ${INCLUDES} -c -g $*.cpp\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\t@echo '----- '$*.cpp' is compiled ok!'\n\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "# Here are some rules for converting .c -> .o\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, ".SUFFIXES: .c .o\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, ".c.o:\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\t@$(CC) $(CFLAGS) -c $*.c \n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\t@echo '----- '$*.c' is compiled ok!'\n\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	fclose(pFile);
+
+	sprintf_safe(szPathFile, 200, "%s/Makefile", 
+		pCppProject->m_szProjectName);
+
+	pFile = fopen(szPathFile, "w");
+	if(NULL == pFile)
+	{
+		return false;
+	}
+
+	sprintf_safe(szTemp, 200, "include Makefile.define\n\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "PATS = ");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	for(int i = 0; i < (int)pCppProject->m_vecCppFileList.size(); i++)
+	{
+		sprintf_safe(szTemp, 200, "\t%s.o \\\n", pCppProject->m_vecCppFileList[i].m_szFileName);
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	}
+	sprintf_safe(szTemp, 200, "\tTest_%s.o\n\n", pCppProject->m_szProjectName);
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	sprintf_safe(szTemp, 200, "OBJS = ");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	for(int i = 0; i < (int)pCppProject->m_vecCppFileList.size(); i++)
+	{
+		sprintf_safe(szTemp, 200, "\t%s.o \\\n", pCppProject->m_vecCppFileList[i].m_szFileName);
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	}
+	sprintf_safe(szTemp, 200, "\tTest_%s.o\n\n", pCppProject->m_szProjectName);
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	sprintf_safe(szTemp, 200, "APP_NAME = %s\n\n", pCppProject->m_szProjectName);
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "$(APP_NAME):$(PATS)\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\t$(CC) -rdynamic -o $(APP_NAME) $(OBJS) $(LIBS)\n\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "clean:\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\trm -rf *.o $(APP_NAME):\n\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "cl:\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\trm -rf *.o\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	fclose(pFile);
+
 	return true;
 }
