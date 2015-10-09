@@ -65,7 +65,7 @@ bool Creat_Lua_Files( _Project_Lua_Info* pLuaProject )
 					nPos++;
 				}
 			}
-			sprintf_safe(szTemp, 200, ")\n{\n");
+			sprintf_safe(szTemp, 200, ")\n");
 			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 			sprintf_safe(szTemp, 200, "\t--add your Lua code at here.\n");
 			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
@@ -94,7 +94,7 @@ bool Creat_Lua_Files( _Project_Lua_Info* pLuaProject )
 
 			}
 
-			sprintf_safe(szTemp, 200, "\n}\n\n");
+			sprintf_safe(szTemp, 200, "\nend\n\n");
 			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 		}
 

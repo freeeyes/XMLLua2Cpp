@@ -100,10 +100,13 @@ bool Create_Cpp_API_Files( _Project_Cpp_Info* pCppProject )
 			_Function_Info& obj_Function_Info = (_Function_Info& )pCppProject->m_vecCppFileList[i].m_vecFunctionList[j];
 			sprintf_safe(szTemp, 200, "//%s\n", obj_Function_Info.m_szDesc);
 			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-			sprintf_safe(szTemp, 200, "static int LuaFn_%s(lua_State* L);\n", obj_Function_Info.m_szFunctionName);
+			sprintf_safe(szTemp, 200, "int LuaFn_%s(lua_State* L);\n", obj_Function_Info.m_szFunctionName);
 			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 		}
 
+
+		sprintf_safe(szTemp, 200, "#endif\n");
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 		fclose(pFile);
 
 		//在编写CPP文件
@@ -229,7 +232,6 @@ bool Create_Cpp_API_Files( _Project_Cpp_Info* pCppProject )
 			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 		}
 
-
 		fclose(pFile);
 	}
 
@@ -267,7 +269,7 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
 	//编写注册绑定函数
-	sprintf_safe(szTemp, 200, "bool Regedit_ToLua_Function(lua_State* L)\n");
+	sprintf_safe(szTemp, 200, "void Regedit_ToLua_Function(lua_State* L)\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	sprintf_safe(szTemp, 200, "{\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
