@@ -313,6 +313,8 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	sprintf_safe(szTemp, 200, "\tluaopen_base(L);\n\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\tluaL_openlibs(L);\n\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	sprintf_safe(szTemp, 200, "\tRegedit_ToLua_Function(L);\n\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	sprintf_safe(szTemp, 200, "\treturn true;\n");
@@ -535,7 +537,7 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	for(int i = 0; i < (int)pLuaProject->m_vecLuaFileList.size(); i++)
 	{
-		sprintf_safe(szTemp, 200, "\t\tOpen_Lua_File(pLuaState, \"%s.Lua\");\n", 
+		sprintf_safe(szTemp, 200, "\t\tOpen_Lua_File(pLuaState, \"%s.lua\");\n", 
 			pLuaProject->m_vecLuaFileList[i].m_szFileName);
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	}
