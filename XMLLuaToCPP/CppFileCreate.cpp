@@ -243,13 +243,17 @@ bool Create_Cpp_API_Files( _Project_Cpp_Info* pCppProject )
 	return true;
 }
 
-bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* pCppProject )
+bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* pCppProject, _Test_API* pTestAPI )
 {
 	//在编写CPP文件
 	char szTemp[1024]     = {'\0'};
 	char szPathFile[200]  = {'\0'};
 
-	sprintf_safe(szPathFile, 200, "%s/Test_%s.cpp", 
+	//sprintf_safe(szPathFile, 200, "%s/Test_%s.cpp", 
+	//	pCppProject->m_szProjectName,
+	//	pCppProject->m_szProjectName);
+
+	sprintf_safe(szPathFile, 200, "%s/API_%s.h", 
 		pCppProject->m_szProjectName,
 		pCppProject->m_szProjectName);
 
@@ -259,7 +263,7 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 		return false;
 	}
 
-	sprintf_safe(szTemp, 200, "//Test Lua Project.\n");
+	sprintf_safe(szTemp, 200, "//API Lua Project.\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	//编写引用头文件
 	sprintf_safe(szTemp, 200, "#include \"LuaCommon.h\"\n");
@@ -355,10 +359,10 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	sprintf_safe(szTemp, 200, "\t}\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "}\n");
+	sprintf_safe(szTemp, 200, "}\n\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
-	//生成测试函数
+	//生成调用Lua接口函数
 	for(int i = 0; i < (int)pLuaProject->m_vecLuaFileList.size(); i++)
 	{
 		//编写函数
@@ -512,6 +516,84 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 		}
 	}
 
+	fclose(pFile);
+
+	//生辰测试工程文件
+	sprintf_safe(szPathFile, 200, "%s/Test_%s.cpp", 
+		pCppProject->m_szProjectName,
+		pCppProject->m_szProjectName);
+
+	pFile = fopen(szPathFile, "w");
+	if(NULL == pFile)
+	{
+		return false;
+	}
+
+	sprintf_safe(szTemp, 200, "//Test Lua Project.\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	//编写引用头文件
+	sprintf_safe(szTemp, 200, "#include \"API_%s.h\"\n\n", pCppProject->m_szProjectName);
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	//生成测试函数
+	for(int i = 0; i < (int)pTestAPI->m_vecTestAPIInfo.size(); i++)
+	{
+		sprintf_safe(szTemp, 200, "void %s()\n", pTestAPI->m_vecTestAPIInfo[i].m_szName);
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		sprintf_safe(szTemp, 200, "{\n");
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		sprintf_safe(szTemp, 200, "\tfor(itn i = 0; i < %d, i++)\n", pTestAPI->m_vecTestAPIInfo[i].m_nTestCount);
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		sprintf_safe(szTemp, 200, "\t{\n");
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+		string strTemp;
+		for(int j = 0; j < (int)pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn.size(); j++)
+		{
+			char szTempl[MAX_BUFF_50] = {'\0'};
+			if(j == 0)
+			{
+				if(pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_emParamClass != PARAM_CLASS_INT)
+				{
+					sprintf_safe(szTempl, MAX_BUFF_50, "\"%s\"", pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szValue);
+				}
+				else
+				{
+					sprintf_safe(szTempl, MAX_BUFF_50, "%s", pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szValue);
+				}
+				strTemp += szTempl;
+			}
+			else
+			{
+				if(pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_emParamClass != PARAM_CLASS_INT)
+				{
+					sprintf_safe(szTempl, MAX_BUFF_50, ",\"%s\"", pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szValue);
+				}
+				else
+				{
+					sprintf_safe(szTempl, MAX_BUFF_50, ",%s", pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szValue);
+				}
+				strTemp += szTempl;
+			}
+			
+		}
+
+		sprintf_safe(szTemp, 200, "\t\tbool blState = Test_%s(L, %s);\n", pTestAPI->m_vecTestAPIInfo[i].m_szLuaFuncName, strTemp.c_str());
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		sprintf_safe(szTemp, 200, "\t\tif(blState == false)\n");
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		sprintf_safe(szTemp, 200, "\t\t{\n");
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		sprintf_safe(szTemp, 200, "\t\t\tprintf(\"[%s]check Return is ERROR!\\n\")\n", pTestAPI->m_vecTestAPIInfo[i].m_szLuaFuncName);
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		sprintf_safe(szTemp, 200, "\t\t}\n");
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		sprintf_safe(szTemp, 200, "\t}\n");
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		sprintf_safe(szTemp, 200, "}\n");
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	}
+
 	//生成Main文件
 	sprintf_safe(szTemp, 200, "int main(int argc, char* argv[])\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
@@ -551,7 +633,6 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	sprintf_safe(szTemp, 200, "}\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-
 
 	fclose(pFile);
 	return true;
@@ -670,4 +751,10 @@ bool CreateMakefile( _Project_Cpp_Info* pCppProject )
 	fclose(pFile);
 
 	return true;
+}
+
+bool Read_Test_File_XML( const char* pXMLName, _Test_API* pTestAPI )
+{
+	CXmlOpeation objXmlOpeation;
+	return objXmlOpeation.Parse_XML_File_Test(pXMLName, pTestAPI);
 }

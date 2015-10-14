@@ -117,6 +117,50 @@ struct _Project_Cpp_Info
 	}
 };
 
+//测试参数数据结构体
+struct _Test_API_Param_Info
+{
+	EM_PARAM_CLASS m_emParamClass;
+	char           m_szValue[MAX_BUFF_50];
+
+	_Test_API_Param_Info()
+	{
+		m_emParamClass = PARAM_CLASS_VOID;
+		m_szValue[0]   = '\0';
+	}
+};
+typedef vector<_Test_API_Param_Info> vecTestLuaParamIn;
+typedef vector<_Test_API_Param_Info> vecTestLuaParamOut;
+
+//测试Lua API函数
+struct _Test_API_Lua_Function_Info
+{
+	char               m_szName[MAX_BUFF_50];
+	char               m_szLuaFuncName[MAX_BUFF_50];
+	int                m_nTestCount;
+	vecTestLuaParamIn  m_vecTestLuaParamIn;
+	vecTestLuaParamOut m_vecTestLuaParamOut;
+
+	_Test_API_Lua_Function_Info()
+	{
+		m_szName[0]        = '\0';
+		m_szLuaFuncName[0] = '\0';
+		m_nTestCount       = 0;
+	}
+};
+typedef vector<_Test_API_Lua_Function_Info> vecTestAPIInfo;
+
+struct _Test_API
+{
+	char m_szProjectName[MAX_BUFF_50];
+	vecTestAPIInfo m_vecTestAPIInfo;
+
+	_Test_API()
+	{
+		m_szProjectName[0] = '\0';
+	}
+};
+
 static void sprintf_safe(char* szText, int nLen, const char* fmt ...)
 {
 	if(szText == NULL)

@@ -242,6 +242,9 @@ bool CXmlOpeation::Parse_XML_File_Lua( const char* pName, _Project_Lua_Info* pLu
 		}
 	}
 
+	delete m_pTiXmlDocument;
+	m_pTiXmlDocument = NULL;
+
 	return true;
 }
 
@@ -348,6 +351,105 @@ bool CXmlOpeation::Parse_XML_File_Cpp( const char* pName, _Project_Cpp_Info* pCp
 		}
 	}
 
+	delete m_pTiXmlDocument;
+	m_pTiXmlDocument = NULL;
+
 	return true;
 }
 
+bool CXmlOpeation::Parse_XML_File_Test( const char* pName, _Test_API* pTestAPI )
+{
+	if(NULL == pTestAPI)
+	{
+		return false;
+	}
+
+	Close();
+	m_pTiXmlDocument = new TiXmlDocument(pName);
+	if(NULL == m_pTiXmlDocument)
+	{
+		return false;
+	}
+
+	if(false == m_pTiXmlDocument->LoadFile())
+	{
+		return false;
+	}
+
+	TiXmlNode* pMainNode     = NULL;
+	TiXmlNode* pParamNode    = NULL;
+
+	//获得根元素
+	m_pRootElement = m_pTiXmlDocument->RootElement();
+
+	if(NULL == m_pRootElement)
+	{
+		return false;
+	}
+
+	//获得工程名称
+	sprintf_safe(pTestAPI->m_szProjectName, MAX_BUFF_50, "%s", (char* )m_pRootElement->Attribute("ProjectName"));
+
+	//分别获得测试函数名
+	for(pMainNode = m_pRootElement->FirstChildElement();pMainNode;pMainNode = pMainNode->NextSiblingElement())
+	{
+		_Test_API_Lua_Function_Info obj_Test_API_Lua_Function_Info;
+
+		TiXmlElement* pMainElement = pMainNode->ToElement();
+		sprintf_safe(obj_Test_API_Lua_Function_Info.m_szName, MAX_BUFF_50, "%s", pMainElement->Attribute("Name"));
+		sprintf_safe(obj_Test_API_Lua_Function_Info.m_szLuaFuncName, MAX_BUFF_50, "%s", pMainElement->Attribute("LuaFuncName"));
+		obj_Test_API_Lua_Function_Info.m_nTestCount = atoi(pMainElement->Attribute("Count"));
+
+		TiXmlElement* pFunctionElement = pMainNode->ToElement();
+
+		//分别获得函数验证参数
+		for(pParamNode = pFunctionElement->FirstChildElement();pParamNode;pParamNode = pParamNode->NextSiblingElement())
+		{
+			_Test_API_Param_Info obj_Test_API_Param_Info;
+			EM_PARAM_TYPE emParamType;
+
+			TiXmlElement* pParamElement = pParamNode->ToElement();
+
+			if(strcmp(pParamElement->Attribute("ParamType"), "in") == 0)
+			{
+				emParamType = PARAM_TYPE_IN;
+			}
+			else
+			{
+				emParamType = PARAM_TYPE_OUT;
+			}
+
+			char szTemp[MAX_BUFF_50] = {'\0'};
+			if(strcmp(pParamElement->Attribute("ParamClass"), "int") == 0)
+			{
+				obj_Test_API_Param_Info.m_emParamClass = PARAM_CLASS_INT;
+			}
+			else if(strcmp(pParamElement->Attribute("ParamClass"), "string") == 0)
+			{
+				obj_Test_API_Param_Info.m_emParamClass = PARAM_CLASS_STRING;
+			}
+			else
+			{
+				obj_Test_API_Param_Info.m_emParamClass = PARAM_CLASS_VOID;
+			}
+
+			sprintf_safe(obj_Test_API_Param_Info.m_szValue, MAX_BUFF_50, "%s", pParamElement->Attribute("Value"));
+
+			if(emParamType == PARAM_TYPE_IN)
+			{
+				obj_Test_API_Lua_Function_Info.m_vecTestLuaParamIn.push_back(obj_Test_API_Param_Info);
+			}
+			else
+			{
+				obj_Test_API_Lua_Function_Info.m_vecTestLuaParamOut.push_back(obj_Test_API_Param_Info);
+			}
+		}
+
+		pTestAPI->m_vecTestAPIInfo.push_back(obj_Test_API_Lua_Function_Info);
+	}
+
+	delete m_pTiXmlDocument;
+	m_pTiXmlDocument = NULL;
+
+	return true;
+}
