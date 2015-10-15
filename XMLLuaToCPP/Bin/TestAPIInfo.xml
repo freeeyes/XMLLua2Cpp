@@ -3,11 +3,12 @@
 <!-- add by freeeyes -->
 <!-- support string,int,void* -->
 <configer ProjectName="autotest">
-	<LuaTest Name="Test1" LuaFuncName="test_func_one" Count="1000">
+	<LuaTest Name="Test1" LuaFuncName="test_func_one" Count="1">
 		<Param ParamType="in" ParamClass="int" Value="1"/>
+		<Param ParamType="in" ParamClass="string" Value="freeeyes"/>
 		<Param ParamType="out" ParamClass="int" Value="1"/>
 	</LuaTest>
-	<LuaTest Name="Test2" LuaFuncName="test_func_two" Count="1000">
+	<LuaTest Name="Test2" LuaFuncName="test_func_two" Count="1">
 		<Param ParamType="in" ParamClass="int" Value="1"/>
 	</LuaTest>		
 </configer>

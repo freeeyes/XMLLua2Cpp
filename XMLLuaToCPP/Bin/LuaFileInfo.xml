@@ -6,6 +6,7 @@
 	<LuaFile LuaFileName="TestLua" desc="test">
 		<LuaFunc FuncName="test_func_one" desc="lua test funcion one">
 			<Param ParamName="nindex" ParamType="in" ParamClass="int" ParamLength="4" />
+			<Param ParamName="strname" ParamType="in" ParamClass="string" ParamLength="4" />
 			<Param ParamName="nRetindex" ParamType="out" ParamClass="int" ParamLength="4" />
 		</LuaFunc>
 		<LuaFunc FuncName="test_func_two" desc="lua test funcion two">
