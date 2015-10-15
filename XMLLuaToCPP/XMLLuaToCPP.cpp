@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
 	//生成makefile文件
 	CreateMakefile(&obj_Project_Cpp_Info);
 
-	getchar();
+	//getchar();
 
 	return 0;
 }

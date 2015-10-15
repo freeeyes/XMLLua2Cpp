@@ -532,7 +532,31 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 	sprintf_safe(szTemp, 200, "//Test Lua Project.\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	//编写引用头文件
-	sprintf_safe(szTemp, 200, "#include \"API_%s.h\"\n\n", pCppProject->m_szProjectName);
+	sprintf_safe(szTemp, 200, "#include \"API_%s.h\"\n", pCppProject->m_szProjectName);
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "#include <string.h>\n\n", pCppProject->m_szProjectName);
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	//生成公用测算时间代码
+	sprintf_safe(szTemp, 200, "unsigned long Get_System_TickCount()\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "{\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "#ifdef WIN32\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\treturn GetTickCount();\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "#else\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\tstruct timespec ts;\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\tclock_gettime(CLOCK_MONOTONIC, &ts);\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\treturn (ts.tv_sec * 1000 + ts.tv_nsec / 1000000);\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "#endif\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "}\n\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
 	//生成测试Lua接口调用API
@@ -766,6 +790,12 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 		sprintf_safe(szTemp, 200, "{\n");
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		sprintf_safe(szTemp, 200, "\tint nSuccess = 0;\n");
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		sprintf_safe(szTemp, 200, "\tint nFail = 0;\n");
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		sprintf_safe(szTemp, 200, "\tunsigned long ulbegin = Get_System_TickCount();\n");
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 		sprintf_safe(szTemp, 200, "\tfor(int i = 0; i < %d; i++)\n", pTestAPI->m_vecTestAPIInfo[i].m_nTestCount);
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 		sprintf_safe(szTemp, 200, "\t{\n");
@@ -836,11 +866,35 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 		sprintf_safe(szTemp, 200, "\t\t{\n");
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-		sprintf_safe(szTemp, 200, "\t\t\tprintf(\"[%s]check Return is ERROR!\\n\");\n", pTestAPI->m_vecTestAPIInfo[i].m_szLuaFuncName);
+		sprintf_safe(szTemp, 200, "\t\t\tLua_Print(\"[%s]check Return is ERROR!\\n\");\n", pTestAPI->m_vecTestAPIInfo[i].m_szLuaFuncName);
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		sprintf_safe(szTemp, 200, "\t\t\tnFail++;\n", pTestAPI->m_vecTestAPIInfo[i].m_szLuaFuncName);
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		sprintf_safe(szTemp, 200, "\t\t}\n");
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		sprintf_safe(szTemp, 200, "\t\telse\n");
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		sprintf_safe(szTemp, 200, "\t\t{\n");
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		sprintf_safe(szTemp, 200, "\t\t\tnSuccess++;\n");
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 		sprintf_safe(szTemp, 200, "\t\t}\n");
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 		sprintf_safe(szTemp, 200, "\t}\n");
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		sprintf_safe(szTemp, 200, "\tunsigned long ulEnd = Get_System_TickCount();\n");
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		sprintf_safe(szTemp, 200, "\tchar szLog[500] = {'\\0'};\n");
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		sprintf_safe(szTemp, 200, "\tsprintf(szLog, \"(%s)[%s]Success=%%d,Fail=%%d,timecost=%%d.\\n\", nSuccess, nFail, (int)(ulEnd - ulbegin));\n", 
+			pTestAPI->m_vecTestAPIInfo[i].m_szName,
+			pTestAPI->m_vecTestAPIInfo[i].m_szLuaFuncName);
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		sprintf_safe(szTemp, 200, "\tFILE* pFile = fopen(\"TestResult.log\", \"a+\");\n");
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		sprintf_safe(szTemp, 200, "\tfwrite(szLog, strlen(szLog), sizeof(char), pFile);\n");
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		sprintf_safe(szTemp, 200, "\tfclose(pFile);\n");
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 		sprintf_safe(szTemp, 200, "}\n");
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
@@ -850,6 +904,8 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 	sprintf_safe(szTemp, 200, "int main(int argc, char* argv[])\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	sprintf_safe(szTemp, 200, "{\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\tremove(\"TestResult.log\");\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	sprintf_safe(szTemp, 200, "\tlua_State* pLuaState = NULL;\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
