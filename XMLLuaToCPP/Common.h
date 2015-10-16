@@ -120,13 +120,15 @@ struct _Project_Cpp_Info
 //测试参数数据结构体
 struct _Test_API_Param_Info
 {
+	char           m_szParamName[MAX_BUFF_50];
 	EM_PARAM_CLASS m_emParamClass;
 	char           m_szValue[MAX_BUFF_50];
 
 	_Test_API_Param_Info()
 	{
-		m_emParamClass = PARAM_CLASS_VOID;
-		m_szValue[0]   = '\0';
+		m_szParamName[0] = '\0';
+		m_emParamClass   = PARAM_CLASS_VOID;
+		m_szValue[0]     = '\0';
 	}
 };
 typedef vector<_Test_API_Param_Info> vecTestLuaParamIn;
