@@ -163,6 +163,48 @@ struct _Test_API
 	}
 };
 
+//记录基础数据类型的数据模型
+struct _Base_Data_Info
+{
+	char m_szDataName[MAX_BUFF_50];
+	char m_szDataType[MAX_BUFF_50];
+	int  m_nDataLen;
+	char m_szDataDesc[MAX_BUFF_50];
+
+	_Base_Data_Info()
+	{
+		m_szDataName[0] = '\0';
+		m_szDataType[0] = '\0';
+		m_szDataDesc[0] = '\0';
+		m_nDataLen      = 0;
+	}
+};
+typedef vector<_Base_Data_Info> vecBaseDataInfo;
+
+//结构对象命名结构体
+struct _Base_Data_Struct
+{
+	char m_szStructName[MAX_BUFF_50];
+	vecBaseDataInfo m_vecBaseDataInfo;
+
+	_Base_Data_Struct()
+	{
+		m_szStructName[0] = '\0';
+	}
+};
+typedef vector<_Base_Data_Struct> vecBaseDataStruct;
+
+struct _Base_Data_Group
+{
+	char m_szProjectName[MAX_BUFF_50];
+	vecBaseDataStruct m_vecBaseDataStruct;
+
+	_Base_Data_Group()
+	{
+		m_szProjectName[0] = '\0';
+	}
+};
+
 static void sprintf_safe(char* szText, int nLen, const char* fmt ...)
 {
 	if(szText == NULL)

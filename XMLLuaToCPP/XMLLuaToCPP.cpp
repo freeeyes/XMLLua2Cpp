@@ -12,6 +12,7 @@ int main(int argc, char* argv[])
 	_Project_Lua_Info obj_Project_Lua_Info;
 	_Project_Cpp_Info obj_Project_Cpp_Info;
 	_Test_API         obj_Test_API;
+	_Base_Data_Group  obj_Base_Data_Group;
 	
 	bool blRet = Read_Lua_File_XML("LuaFileInfo.xml", &obj_Project_Lua_Info);
 	if(true != blRet)
@@ -37,6 +38,15 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 
+	
+	blRet = Read_StructData_File_XML("UserData.xml", &obj_Base_Data_Group);
+	if(true != blRet)
+	{
+		printf("[Main]Read_StructData_File_XML is fail.\n");
+		getchar();
+		return 0;
+	}
+
 
 	//生成Lua文件
 	Creat_Lua_Files(&obj_Project_Lua_Info);
@@ -44,6 +54,7 @@ int main(int argc, char* argv[])
 	printf("[Main]Create Project is OK.\n");
 
 	//生成Cpp文件
+	Create_Head_Struct_Files(&obj_Base_Data_Group);
 	Create_Cpp_API_Files(&obj_Project_Cpp_Info);
 	Create_Cpp_Test_Files(&obj_Project_Lua_Info, &obj_Project_Cpp_Info, &obj_Test_API);
 

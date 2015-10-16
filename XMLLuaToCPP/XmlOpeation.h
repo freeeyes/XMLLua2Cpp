@@ -32,6 +32,7 @@ public:
   bool Parse_XML_File_Lua(const char* pName, _Project_Lua_Info* pLuaProject);
   bool Parse_XML_File_Cpp(const char* pName, _Project_Cpp_Info* pCppProject);
   bool Parse_XML_File_Test(const char* pName, _Test_API* pTestAPI);
+  bool Parse_XML_File_BaseData(const char* pName, _Base_Data_Group* pBaseDataGroup);
 
 private:
   TiXmlDocument* m_pTiXmlDocument;

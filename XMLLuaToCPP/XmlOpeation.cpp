@@ -454,3 +454,73 @@ bool CXmlOpeation::Parse_XML_File_Test( const char* pName, _Test_API* pTestAPI )
 
 	return true;
 }
+
+bool CXmlOpeation::Parse_XML_File_BaseData( const char* pName, _Base_Data_Group* pBaseDataGroup )
+{
+	if(NULL == pBaseDataGroup)
+	{
+		return false;
+	}
+
+	Close();
+	m_pTiXmlDocument = new TiXmlDocument(pName);
+	if(NULL == m_pTiXmlDocument)
+	{
+		return false;
+	}
+
+	if(false == m_pTiXmlDocument->LoadFile())
+	{
+		return false;
+	}
+
+	TiXmlNode* pMainNode     = NULL;
+	TiXmlNode* pParamNode    = NULL;
+
+	//获得根元素
+	m_pRootElement = m_pTiXmlDocument->RootElement();
+
+	if(NULL == m_pRootElement)
+	{
+		return false;
+	}
+
+	//获得工程名称
+	sprintf_safe(pBaseDataGroup->m_szProjectName, MAX_BUFF_50, "%s", (char* )m_pRootElement->Attribute("ProjectName"));
+
+	//分别获得测试函数名
+	for(pMainNode = m_pRootElement->FirstChildElement();pMainNode;pMainNode = pMainNode->NextSiblingElement())
+	{
+		TiXmlElement* pMainElement = pMainNode->ToElement();
+
+		_Base_Data_Struct obj_Base_Data_Struct;
+		sprintf_safe(obj_Base_Data_Struct.m_szStructName, MAX_BUFF_50, "%s", pMainElement->Value());
+
+		TiXmlNode* pNode = NULL;
+
+		for(pNode = pMainElement->FirstChildElement();pNode;pNode=pNode->NextSiblingElement())
+		{
+			_Base_Data_Info obj_Base_Data_Info;
+
+			if(pNode->Type() == TiXmlText::TINYXML_ELEMENT)
+			{
+				sprintf_safe(obj_Base_Data_Info.m_szDataType, MAX_BUFF_50, "%s", pNode->ToElement()->GetText());
+				sprintf_safe(obj_Base_Data_Info.m_szDataName, MAX_BUFF_50, "%s", pNode->ToElement()->Value());
+				sprintf_safe(obj_Base_Data_Info.m_szDataDesc, MAX_BUFF_50, "%s", pNode->ToElement()->Attribute("desc"));
+				if(pNode->ToElement()->Attribute("length") != NULL)
+				{
+					obj_Base_Data_Info.m_nDataLen = atoi(pNode->ToElement()->Attribute("length"));
+				}
+			}
+
+			obj_Base_Data_Struct.m_vecBaseDataInfo.push_back(obj_Base_Data_Info);
+		}
+
+		pBaseDataGroup->m_vecBaseDataStruct.push_back(obj_Base_Data_Struct);
+	}
+
+	delete m_pTiXmlDocument;
+	m_pTiXmlDocument = NULL;
+
+	return true;
+}

@@ -91,7 +91,9 @@ bool Create_Cpp_API_Files( _Project_Cpp_Info* pCppProject )
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 		sprintf_safe(szTemp, 200, "}\n");
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-		sprintf_safe(szTemp, 200, "#include <stdio.h>\n\n");
+		sprintf_safe(szTemp, 200, "#include <stdio.h>\n");
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		sprintf_safe(szTemp, 200, "#include \"Common_%s.h\"\n\n", pCppProject->m_szProjectName);
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
 		sprintf_safe(szTemp, 200, "extern \"C\"\n");
@@ -563,7 +565,7 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 					}
 					else
 					{
-						sprintf_safe(szTemp, 200, "\tobj_%s.%s = lua_tolightuserdata(L, %d);\n",
+						sprintf_safe(szTemp, 200, "\tobj_%s.%s = lua_touserdata(L, %d);\n",
 							obj_Function_Info.m_szFunctionName,
 							obj_Function_Info.m_vecParamList[k].m_szParamName,
 							nIndex);
@@ -947,4 +949,67 @@ bool Read_Test_File_XML( const char* pXMLName, _Test_API* pTestAPI )
 {
 	CXmlOpeation objXmlOpeation;
 	return objXmlOpeation.Parse_XML_File_Test(pXMLName, pTestAPI);
+}
+
+bool Read_StructData_File_XML(const char* pXMLName, _Base_Data_Group* pBaseDataGroup)
+{
+	CXmlOpeation objXmlOpeation;
+	return objXmlOpeation.Parse_XML_File_BaseData(pXMLName, pBaseDataGroup);
+}
+
+bool Create_Head_Struct_Files( _Base_Data_Group* pBaseDataGroup )
+{
+	//在编写H文件
+	char szTemp[1024]     = {'\0'};
+	char szPathFile[200]  = {'\0'};
+
+	sprintf_safe(szPathFile, 200, "%s/Common_%s.h", 
+		pBaseDataGroup->m_szProjectName,
+		pBaseDataGroup->m_szProjectName);
+
+	FILE* pFile = fopen(szPathFile, "w");
+	if(NULL == pFile)
+	{
+		return false;
+	}
+
+	sprintf_safe(szTemp, 200, "//struct Common Data.\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "#include <stdio.h>\n\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	for(int i = 0; i < (int)pBaseDataGroup->m_vecBaseDataStruct.size(); i++)
+	{
+		//生成Struct
+		sprintf_safe(szTemp, 200, "struct %s\n", pBaseDataGroup->m_vecBaseDataStruct[i].m_szStructName);
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		sprintf_safe(szTemp, 200, "{\n");
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		for(int j = 0; j < (int)pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo.size(); j++)
+		{
+			if(pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_nDataLen > 0)
+			{
+				sprintf_safe(szTemp, 200, "\t%s m_%s[%d]; //%s\n", 
+					pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataType,
+					pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataName,
+					pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_nDataLen,
+					pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataDesc);
+				fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+			}
+			else
+			{
+				sprintf_safe(szTemp, 200, "\t%s m_%s; //%s\n", 
+					pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataType,
+					pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataName,
+					pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataDesc);
+				fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+			}
+		}
+		sprintf_safe(szTemp, 200, "};\n\n");
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	}
+
+	fclose(pFile);
+
+	return true;
 }
