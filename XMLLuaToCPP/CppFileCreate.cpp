@@ -159,7 +159,7 @@ bool Create_Cpp_API_Files( _Project_Cpp_Info* pCppProject )
 					}
 					else
 					{
-						sprintf_safe(szTemp, 200, "\t%s* %s = (%s* )lua_touserdata(L, %d);\n", 
+						sprintf_safe(szTemp, 200, "\t%s* %s = (%s )lua_touserdata(L, %d);\n", 
 							obj_Function_Info.m_vecParamList[k].m_szParamType,
 							obj_Function_Info.m_vecParamList[k].m_szParamName,
 							obj_Function_Info.m_vecParamList[k].m_szParamType,
@@ -565,9 +565,10 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 					}
 					else
 					{
-						sprintf_safe(szTemp, 200, "\tobj_%s.%s = lua_touserdata(L, %d);\n",
+						sprintf_safe(szTemp, 200, "\tobj_%s.%s = (%s )lua_touserdata(L, %d);\n",
 							obj_Function_Info.m_szFunctionName,
 							obj_Function_Info.m_vecParamList[k].m_szParamName,
+							obj_Function_Info.m_vecParamList[k].m_szParamType,
 							nIndex);
 						fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 					}
@@ -973,6 +974,11 @@ bool Create_Head_Struct_Files( _Base_Data_Group* pBaseDataGroup )
 		return false;
 	}
 
+	sprintf_safe(szTemp, 200, "#ifndef COMMON_%s_H\n", pBaseDataGroup->m_szProjectName);
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "#define COMMON_%s_H\n", pBaseDataGroup->m_szProjectName);
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
 	sprintf_safe(szTemp, 200, "//struct Common Data.\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	sprintf_safe(szTemp, 200, "#include <stdio.h>\n\n");
@@ -1009,6 +1015,9 @@ bool Create_Head_Struct_Files( _Base_Data_Group* pBaseDataGroup )
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	}
 
+
+	sprintf_safe(szTemp, 200, "#endif\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	fclose(pFile);
 
 	return true;
