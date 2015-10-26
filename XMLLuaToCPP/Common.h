@@ -122,12 +122,14 @@ struct _Test_API_Param_Info
 {
 	char           m_szParamName[MAX_BUFF_50];
 	EM_PARAM_CLASS m_emParamClass;
+	char           m_szParamClass[MAX_BUFF_50];
 	char           m_szValue[MAX_BUFF_50];
 
 	_Test_API_Param_Info()
 	{
 		m_szParamName[0] = '\0';
 		m_emParamClass   = PARAM_CLASS_VOID;
+		m_szParamClass[0] = '\0';
 		m_szValue[0]     = '\0';
 	}
 };

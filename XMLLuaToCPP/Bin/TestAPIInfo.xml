@@ -9,6 +9,7 @@
 		<Param ParamName="nRetindex" ParamType="out" ParamClass="int" Value="1"/>
 	</LuaTest>
 	<LuaTest Name="Test2" LuaFuncName="test_func_two" Count="1">
-		<Param ParamName="nindex" ParamType="in" ParamClass="int" Value="1"/>
+		<Param ParamName="pPlayerInfo" ParamType="in" ParamClass="_PlayerInfo*" Value="{412,428,304,&quot;test&quot;}" />
+		<Param ParamName="pPlayerInfo" ParamType="out" ParamClass="_PlayerInfo*" Value="" />
 	</LuaTest>		
 </configer>

@@ -2,10 +2,10 @@
 
 <!-- add by freeeyes -->
 <configer ProjectName="autotest">
-	<_Player_Info desc="PlayerInfo">
+	<_PlayerInfo desc="PlayerInfo">
 		<nPlayerID desc="User ID">int</nPlayerID>
-		<szPlayerName length="20" desc="User Name">char</szPlayerName>
 		<nPlayerHP desc="HP">int</nPlayerHP>
 		<nPlayerOlder desc="User Older">int</nPlayerOlder>
-	</_Player_Info>
+		<szPlayerName length="20" desc="User Name">char</szPlayerName>
+	</_PlayerInfo>
 </configer>

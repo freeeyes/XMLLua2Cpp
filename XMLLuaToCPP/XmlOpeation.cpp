@@ -434,6 +434,7 @@ bool CXmlOpeation::Parse_XML_File_Test( const char* pName, _Test_API* pTestAPI )
 			}
 
 			sprintf_safe(obj_Test_API_Param_Info.m_szParamName, MAX_BUFF_50, "%s", pParamElement->Attribute("ParamName"));
+			sprintf_safe(obj_Test_API_Param_Info.m_szParamClass, MAX_BUFF_50, "%s", pParamElement->Attribute("ParamClass"));
 			sprintf_safe(obj_Test_API_Param_Info.m_szValue, MAX_BUFF_50, "%s", pParamElement->Attribute("Value"));
 
 			if(emParamType == PARAM_TYPE_IN)

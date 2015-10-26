@@ -16,13 +16,23 @@ bool Creat_Lua_Files( _Project_Lua_Info* pLuaProject )
 	mkdir(pLuaProject->m_szProjectName, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH);
 #endif
 
+	char szTempPath[50]   = {'\0'};
+	char szTempFile[100]  = {'\0'};
+
+	//´´½¨LuaIncodeÄ¿Â¼
+	sprintf_safe(szTempPath, 50, "%s/LuaScript", pLuaProject->m_szProjectName);
+#ifdef WIN32
+	_mkdir(szTempPath);
+#else
+	mkdir(szTempPath, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH);
+#endif
 
 	char szTemp[1024]     = {'\0'};
 	char szPathFile[200]  = {'\0'};
 
 	for(int i = 0; i < (int)pLuaProject->m_vecLuaFileList.size(); i++)
 	{
-		sprintf_safe(szPathFile, 200, "%s/%s.lua", 
+		sprintf_safe(szPathFile, 200, "%s/LuaScript/%s.lua", 
 			pLuaProject->m_szProjectName,
 			pLuaProject->m_vecLuaFileList[i].m_szFileName);
 

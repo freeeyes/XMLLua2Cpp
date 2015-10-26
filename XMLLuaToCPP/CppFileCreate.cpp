@@ -1,5 +1,50 @@
 #include "CppFileCreate.h"
 
+char* delete_space(char src[])
+{
+    char *ret = src;
+    char *p1 = src;
+    char *p2;
+     
+    if (NULL == src)
+        return NULL;
+         
+    while (*p1 == ' ' || *p1 == '\t')//跳过最前面空白字符(这里增加了2楼提到的'\t'字符)
+        p1++;
+    p2 = p1;
+    while (*p2)
+        p2++;
+    while (--p2 >= src && (*p2== ' ' || *p2 == '\t'))//跳过最后面空白字符
+        ;
+    while (p1 <= p2)
+        *src++ = *p1++;//拷贝中间部分
+    *src = 0;  
+    return ret;
+}
+
+char* delete_star(char src[])
+{
+    char *ret = src;
+    char *p1 = src;
+    char *p2;
+     
+    if (NULL == src)
+        return NULL;
+         
+    while (*p1 == ' ' || *p1 == '\t')//跳过最前面空白字符(这里增加了2楼提到的'\t'字符)
+        p1++;
+    p2 = p1;
+    while (*p2)
+        p2++;
+    while (--p2 >= src && (*p2== '*' || *p2== ' ' || *p2 == '\t'))//跳过最后面空白字符
+        ;
+    while (p1 <= p2)
+        *src++ = *p1++;//拷贝中间部分
+    *src = 0;
+     
+    return ret;
+}
+
 void Tranfile( const char* pFileSrc, const char* pFileDes )
 {
 	fstream fsCopee( pFileSrc, ios::binary | ios::in ) ;
@@ -9,33 +54,19 @@ void Tranfile( const char* pFileSrc, const char* pFileDes )
 
 void Create_Lua_Environment( _Project_Lua_Info* pLuaProject )
 {
-	char szLuaInclude[50] = {"LuaInclude"};
-	char szLuaLib[50]     = {"LuaLib"};
 	char szTempPath[50]   = {'\0'};
 	char szTempFile[100]  = {'\0'};
 
 	//创建LuaIncode目录
-	sprintf_safe(szTempPath, 50, "%s/%s", pLuaProject->m_szProjectName, szLuaInclude);
+	sprintf_safe(szTempPath, 50, "%s/LuaCppWrapper", pLuaProject->m_szProjectName);
 #ifdef WIN32
 	_mkdir(szTempPath);
 #else
 	mkdir(szTempPath, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH);
 #endif
 
-	//把Lua文件拷贝过去
-	sprintf_safe(szTempFile, 100, "%s/lua.h", szTempPath);
-	Tranfile("../LuaInclude/lua.h", szTempFile);
-	sprintf_safe(szTempFile, 100, "%s/lauxlib.h", szTempPath);
-	Tranfile("../LuaInclude/lauxlib.h", szTempFile);
-	sprintf_safe(szTempFile, 100, "%s/lua.hpp", szTempPath);
-	Tranfile("../LuaInclude/lua.hpp", szTempFile);
-	sprintf_safe(szTempFile, 100, "%s/luaconf.h", szTempPath);
-	Tranfile("../LuaInclude/luaconf.h", szTempFile);
-	sprintf_safe(szTempFile, 100, "%s/lualib.h", szTempPath);
-	Tranfile("../LuaInclude/lualib.h", szTempFile);
-
 	//创建Lib目录
-	sprintf_safe(szTempPath, 50, "%s/%s", pLuaProject->m_szProjectName, szLuaLib);
+	sprintf_safe(szTempPath, 50, "%s/Test", pLuaProject->m_szProjectName);
 #ifdef WIN32
 	_mkdir(szTempPath);
 #else
@@ -44,7 +75,7 @@ void Create_Lua_Environment( _Project_Lua_Info* pLuaProject )
 
 	//拷贝LuaCommon.h文件
 	sprintf_safe(szTempPath, 50, "%s", pLuaProject->m_szProjectName);
-	sprintf_safe(szTempFile, 100, "%s/LuaCommon.h", szTempPath);
+	sprintf_safe(szTempFile, 100, "%s/LuaCppWrapper/LuaCommon.h", szTempPath);
 	Tranfile("../LuaCommon.h", szTempFile);
 }
 
@@ -62,7 +93,7 @@ bool Create_Cpp_API_Files( _Project_Cpp_Info* pCppProject )
 	for(int i = 0; i < (int)pCppProject->m_vecCppFileList.size(); i++)
 	{
 		//首先生成H文件。
-		sprintf_safe(szPathFile, 200, "%s/%s.h", 
+		sprintf_safe(szPathFile, 200, "%s/LuaCppWrapper/%s.h", 
 			pCppProject->m_szProjectName,
 			pCppProject->m_vecCppFileList[i].m_szFileName);
 
@@ -93,7 +124,7 @@ bool Create_Cpp_API_Files( _Project_Cpp_Info* pCppProject )
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 		sprintf_safe(szTemp, 200, "#include <stdio.h>\n");
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-		sprintf_safe(szTemp, 200, "#include \"Common_%s.h\"\n\n", pCppProject->m_szProjectName);
+		sprintf_safe(szTemp, 200, "#include \"UserDataInterface.h\"\n\n");
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
 		sprintf_safe(szTemp, 200, "extern \"C\"\n");
@@ -117,7 +148,8 @@ bool Create_Cpp_API_Files( _Project_Cpp_Info* pCppProject )
 		fclose(pFile);
 
 		//在编写CPP文件
-		sprintf_safe(szPathFile, 200, "%s/%s.cpp", 
+		
+		sprintf_safe(szPathFile, 200, "%s/LuaCppWrapper/%s.cpp", 
 			pCppProject->m_szProjectName,
 			pCppProject->m_vecCppFileList[i].m_szFileName);
 
@@ -159,7 +191,7 @@ bool Create_Cpp_API_Files( _Project_Cpp_Info* pCppProject )
 					}
 					else
 					{
-						sprintf_safe(szTemp, 200, "\t%s* %s = (%s )lua_touserdata(L, %d);\n", 
+						sprintf_safe(szTemp, 200, "\t%s* %s = (%s* )lua_touserdata(L, %d);\n", 
 							obj_Function_Info.m_vecParamList[k].m_szParamType,
 							obj_Function_Info.m_vecParamList[k].m_szParamName,
 							obj_Function_Info.m_vecParamList[k].m_szParamType,
@@ -238,7 +270,6 @@ bool Create_Cpp_API_Files( _Project_Cpp_Info* pCppProject )
 			sprintf_safe(szTemp, 200, "}\n\n", obj_Function_Info.m_szFunctionName);
 			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 		}
-
 		fclose(pFile);
 	}
 
@@ -255,8 +286,7 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 	//	pCppProject->m_szProjectName,
 	//	pCppProject->m_szProjectName);
 
-	sprintf_safe(szPathFile, 200, "%s/API_%s.h", 
-		pCppProject->m_szProjectName,
+	sprintf_safe(szPathFile, 200, "%s/LuaCppWrapper/LuaCppWrapper.h", 
 		pCppProject->m_szProjectName);
 
 	FILE* pFile = fopen(szPathFile, "w");
@@ -270,6 +300,10 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 	//编写引用头文件
 	sprintf_safe(szTemp, 200, "#include \"LuaCommon.h\"\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	sprintf_safe(szTemp, 200, "#include \"UserDataInterface.h\"\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
 	for(int i = 0; i < (int)pCppProject->m_vecCppFileList.size(); i++)
 	{
 		//首先生成引用文件。
@@ -299,68 +333,22 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 	sprintf_safe(szTemp, 200, "}\n\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
-	sprintf_safe(szTemp, 200, "bool Init_Lua_State(lua_State*& L)\n");
+	//生成luaopen_userdatainterface函数
+	sprintf_safe(szTemp, 200, "int luaopen_userdatainterface(lua_State * L)\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
 	sprintf_safe(szTemp, 200, "{\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "\tint nRet = 0;\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "\tL = luaL_newstate();\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "\tif(NULL == L)\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "\t{\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "\t\tLua_Print(\"[Init_Lua_State_File]lua_State is NULL.\\n\");\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "\t\treturn false;\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "\t}\n\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "\tluaopen_base(L);\n\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "\tluaL_openlibs(L);\n\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
 	sprintf_safe(szTemp, 200, "\tRegedit_ToLua_Function(L);\n\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "\treturn true;\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "}\n\n");
+
+	sprintf_safe(szTemp, 200, "\tluaL_requiref(L,\"userdatainterface\",luaopen_lualib,1);\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
-	sprintf_safe(szTemp, 200, "bool Open_Lua_File(lua_State*& L, const char* pFileName)\n");
+	sprintf_safe(szTemp, 200, "\treturn 1;\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "{\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "\tint nRet = luaL_dofile(L, pFileName);\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "\tif(LUA_OK != nRet)\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "\t{\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "\t\tLua_Print(\"[Init_Lua_State_File]open lua file(%%s)(%%s).\\n\", pFileName, lua_tostring(L, -1));\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "\t\treturn false;\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "\t}\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "\treturn true;\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "}\n\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-
-	sprintf_safe(szTemp, 200, "void Close_Lua_State(lua_State* L)\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "{\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "\tif(NULL != L)\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "\t{\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "\t\tlua_close(L);\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "\t}\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	
 	sprintf_safe(szTemp, 200, "}\n\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
@@ -439,7 +427,7 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 					}
 					else
 					{
-						sprintf_safe(szTemp, 200, ", %s* %s", 
+						sprintf_safe(szTemp, 200, ", %s %s", 
 							obj_Function_Info.m_vecParamList[k].m_szParamType,
 							obj_Function_Info.m_vecParamList[k].m_szParamName);
 						fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
@@ -565,7 +553,7 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 					}
 					else
 					{
-						sprintf_safe(szTemp, 200, "\tobj_%s.%s = (%s )lua_touserdata(L, %d);\n",
+						sprintf_safe(szTemp, 200, "\tobj_%s.%s = (%s)lua_touserdata(L, %d);\n",
 							obj_Function_Info.m_szFunctionName,
 							obj_Function_Info.m_vecParamList[k].m_szParamName,
 							obj_Function_Info.m_vecParamList[k].m_szParamType,
@@ -587,8 +575,8 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 
 	fclose(pFile);
 
-	//生辰测试工程文件
-	sprintf_safe(szPathFile, 200, "%s/Test_%s.cpp", 
+	//生成测试工程文件
+	sprintf_safe(szPathFile, 200, "%s/Test/Test_%s.cpp", 
 		pCppProject->m_szProjectName,
 		pCppProject->m_szProjectName);
 
@@ -601,9 +589,79 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 	sprintf_safe(szTemp, 200, "//Test Lua Project.\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	//编写引用头文件
-	sprintf_safe(szTemp, 200, "#include \"API_%s.h\"\n", pCppProject->m_szProjectName);
+	sprintf_safe(szTemp, 200, "#include \"LuaCppWrapper.h\"\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "#include <string.h>\n\n", pCppProject->m_szProjectName);
+	sprintf_safe(szTemp, 200, "#include <string.h>\n", pCppProject->m_szProjectName);
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "#include <iostream>\n", pCppProject->m_szProjectName);
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "#include <string>\n", pCppProject->m_szProjectName);
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "using namespace std;\n\n", pCppProject->m_szProjectName);
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	
+	sprintf_safe(szTemp, 200, "bool Init_Lua_State(lua_State*& L)\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "{\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\tint nRet = 0;\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\tL = luaL_newstate();\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\tif(NULL == L)\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\t{\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\t\tLua_Print(\"[Init_Lua_State_File]lua_State is NULL.\\n\");\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\t\treturn false;\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\t}\n\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\tluaopen_base(L);\n\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\tluaL_openlibs(L);\n\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\treturn true;\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "}\n\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	sprintf_safe(szTemp, 200, "bool Open_Lua_File(lua_State*& L, const char* pFileName)\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "{\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\tint nRet = luaL_dofile(L, pFileName);\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\tif(LUA_OK != nRet)\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\t{\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\t\tLua_Print(\"[Init_Lua_State_File]open lua file(%%s)(%%s).\\n\", pFileName, lua_tostring(L, -1));\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\t\treturn false;\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\t}\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\treturn true;\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "}\n\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	sprintf_safe(szTemp, 200, "void Close_Lua_State(lua_State* L)\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "{\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\tif(NULL != L)\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\t{\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\t\tlua_close(L);\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\t}\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "}\n\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
 	//生成公用测算时间代码
@@ -642,6 +700,7 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 		sprintf_safe(szTemp, 200, "\tunsigned long ulbegin = Get_System_TickCount();\n");
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		
 		if(pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamOut.size() > 0)
 		{
 			sprintf_safe(szTemp, 200, "\tRe_%s obj_%s;\n", 
@@ -649,6 +708,7 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 				pTestAPI->m_vecTestAPIInfo[i].m_szLuaFuncName);
 			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 		}
+
 		sprintf_safe(szTemp, 200, "\tfor(int i = 0; i < %d; i++)\n", pTestAPI->m_vecTestAPIInfo[i].m_nTestCount);
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 		sprintf_safe(szTemp, 200, "\t{\n");
@@ -660,25 +720,82 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 			char szTempl[MAX_BUFF_50] = {'\0'};
 			if(j == 0)
 			{
-				if(pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_emParamClass != PARAM_CLASS_INT)
+				if(pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_emParamClass == PARAM_CLASS_STRING)
 				{
-					sprintf_safe(szTempl, MAX_BUFF_50, "\"%s\"", pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szValue);
+					sprintf_safe(szTemp, 200, "\t\t%s %s = \"%s\";\n", 
+						pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szParamClass, 
+						pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szParamName,
+						pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szValue);
+					fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+					sprintf_safe(szTempl, MAX_BUFF_50, "%s.c_str()", pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szParamName);
 				}
-				else
+				else if(pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_emParamClass == PARAM_CLASS_INT)
 				{
-					sprintf_safe(szTempl, MAX_BUFF_50, "%s", pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szValue);
+					sprintf_safe(szTemp, 200, "\t\t%s %s = %s;\n", 
+						pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szParamClass, 
+						pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szParamName,
+						pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szValue);
+					fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+					sprintf_safe(szTempl, MAX_BUFF_50, "%s", pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szParamName);
+				}
+				else 
+				{
+					if (0 == strcmp(delete_space(pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szValue),""))
+					{
+						sprintf_safe(szTemp, 200, "\t\t%s %s;\n",
+							delete_star(pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szParamClass), 
+							pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szParamName);
+						fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+						sprintf_safe(szTempl, MAX_BUFF_50, "&%s", pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szParamName);
+					}
+					else
+					{
+						sprintf_safe(szTemp, 200, "\t\t%s %s = %s;\n", 
+							delete_star(pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szParamClass),  
+							pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szParamName,
+							pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szValue);
+						fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+						sprintf_safe(szTempl, MAX_BUFF_50, "&%s", pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szParamName);
+					}
+					
 				}
 				strTemp += szTempl;
 			}
 			else
 			{
-				if(pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_emParamClass != PARAM_CLASS_INT)
+				if(pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_emParamClass == PARAM_CLASS_STRING)
 				{
-					sprintf_safe(szTempl, MAX_BUFF_50, ",\"%s\"", pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szValue);
+					sprintf_safe(szTemp, 200, "\t\t%s %s = \"%s\";\n", 
+						pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szParamClass, 
+						pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szParamName,
+						pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szValue);
+					fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+					sprintf_safe(szTempl, MAX_BUFF_50, ", %s.c_str()", pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szParamName);
 				}
-				else
+				else if(pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_emParamClass == PARAM_CLASS_INT)
 				{
-					sprintf_safe(szTempl, MAX_BUFF_50, ",%s", pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szValue);
+					sprintf_safe(szTemp, 200, "\t\t%s %s = %s;\n", 
+						pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szParamClass, 
+						pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szParamName,
+						pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szValue);
+					fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+					sprintf_safe(szTempl, MAX_BUFF_50, ", %s", pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szParamName);
+				}
+				else 
+				{
+					sprintf_safe(szTemp, 200, "\t\t%s %s = %s;\n", 
+						pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szParamClass, 
+						pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szParamName,
+						pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szValue);
+					fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+					sprintf_safe(szTempl, MAX_BUFF_50, ", %s", pTestAPI->m_vecTestAPIInfo[i].m_vecTestLuaParamIn[j].m_szParamName);
 				}
 				strTemp += szTempl;
 			}
@@ -774,7 +891,7 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 		sprintf_safe(szTemp, 200, "\tfclose(pFile);\n");
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-		sprintf_safe(szTemp, 200, "}\n");
+		sprintf_safe(szTemp, 200, "}\n\n");
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	}
 
@@ -803,9 +920,13 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	sprintf_safe(szTemp, 200, "\t{\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	sprintf_safe(szTemp, 200, "\t\tluaopen_userdatainterface(pLuaState);\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
 	for(int i = 0; i < (int)pLuaProject->m_vecLuaFileList.size(); i++)
 	{
-		sprintf_safe(szTemp, 200, "\t\tOpen_Lua_File(pLuaState, \"%s.lua\");\n", 
+		sprintf_safe(szTemp, 200, "\t\tOpen_Lua_File(pLuaState, \"../LuaScript/%s.lua\");\n", 
 			pLuaProject->m_vecLuaFileList[i].m_szFileName);
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	}
@@ -837,7 +958,7 @@ bool CreateMakefile( _Project_Cpp_Info* pCppProject )
 	char szPathFile[200]  = {'\0'};
 
 	//自动生成makefile.define文件
-	sprintf_safe(szPathFile, 200, "%s/Makefile.define", 
+	sprintf_safe(szPathFile, 200, "%s/Test/Makefile.define", 
 		pCppProject->m_szProjectName);
 
 	FILE* pFile = fopen(szPathFile, "w");
@@ -862,7 +983,7 @@ bool CreateMakefile( _Project_Cpp_Info* pCppProject )
 
 	sprintf_safe(szTemp, 200, "#set Lua lib path\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "INCLUDES = -I./ -I../ -I/usr/include  -I./Include\n");
+	sprintf_safe(szTemp, 200, "INCLUDES = -I./ -I../ -I/usr/include  -I../LuaCppWrapper\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	sprintf_safe(szTemp, 200, "LIBS = -L/usr/lib64 -L/usr/lib -L/usr/local/lib64 -L./ -L./Lib -L${THRIFT_LIB}  -L../ -ldl -lrt -llua\n\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
@@ -880,7 +1001,7 @@ bool CreateMakefile( _Project_Cpp_Info* pCppProject )
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	sprintf_safe(szTemp, 200, "\t@$(CC) -fPIC $(CFLAGS) ${INCLUDES} -c -g $*.cpp\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "\t@echo '----- '$*.cpp' is compiled ok!'\n\n");
+	sprintf_safe(szTemp, 200, "\t@echo '----- '$*.cpp' is compiled ok! -----'\n\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	sprintf_safe(szTemp, 200, "# Here are some rules for converting .c -> .o\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
@@ -890,11 +1011,11 @@ bool CreateMakefile( _Project_Cpp_Info* pCppProject )
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	sprintf_safe(szTemp, 200, "\t@$(CC) $(CFLAGS) -c $*.c \n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "\t@echo '----- '$*.c' is compiled ok!'\n\n");
+	sprintf_safe(szTemp, 200, "\t@echo '----- '$*.c' is compiled ok! -----'\n\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	fclose(pFile);
 
-	sprintf_safe(szPathFile, 200, "%s/Makefile", 
+	sprintf_safe(szPathFile, 200, "%s/Test/Makefile", 
 		pCppProject->m_szProjectName);
 
 	pFile = fopen(szPathFile, "w");
@@ -907,16 +1028,21 @@ bool CreateMakefile( _Project_Cpp_Info* pCppProject )
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	sprintf_safe(szTemp, 200, "PATS = ");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\t../LuaCppWrapper/UserDataInterface.o \\\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
 	for(int i = 0; i < (int)pCppProject->m_vecCppFileList.size(); i++)
 	{
-		sprintf_safe(szTemp, 200, "\t%s.o \\\n", pCppProject->m_vecCppFileList[i].m_szFileName);
+		sprintf_safe(szTemp, 200, "\t../LuaCppWrapper/%s.o \\\n", pCppProject->m_vecCppFileList[i].m_szFileName);
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	}
-	sprintf_safe(szTemp, 200, "\tTest_%s.o\n\n", pCppProject->m_szProjectName);
+	sprintf_safe(szTemp, 200, "\t./Test_%s.o\n\n", pCppProject->m_szProjectName);
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
 	sprintf_safe(szTemp, 200, "OBJS = ");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	sprintf_safe(szTemp, 200, "\tUserDataInterface.o \\\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
 	for(int i = 0; i < (int)pCppProject->m_vecCppFileList.size(); i++)
@@ -931,7 +1057,9 @@ bool CreateMakefile( _Project_Cpp_Info* pCppProject )
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	sprintf_safe(szTemp, 200, "$(APP_NAME):$(PATS)\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "\t$(CC) -rdynamic -o $(APP_NAME) $(OBJS) $(LIBS)\n\n");
+	sprintf_safe(szTemp, 200, "\t$(CC) -rdynamic -o $(APP_NAME) $(OBJS) $(LIBS)\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "\trm -rf *.o\n\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	sprintf_safe(szTemp, 200, "clean:\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
@@ -958,14 +1086,13 @@ bool Read_StructData_File_XML(const char* pXMLName, _Base_Data_Group* pBaseDataG
 	return objXmlOpeation.Parse_XML_File_BaseData(pXMLName, pBaseDataGroup);
 }
 
-bool Create_Head_Struct_Files( _Base_Data_Group* pBaseDataGroup )
+bool Create_User_Data_Interface_Head_Files(_Base_Data_Group* pBaseDataGroup)
 {
 	//在编写H文件
 	char szTemp[1024]     = {'\0'};
 	char szPathFile[200]  = {'\0'};
 
-	sprintf_safe(szPathFile, 200, "%s/Common_%s.h", 
-		pBaseDataGroup->m_szProjectName,
+	sprintf_safe(szPathFile, 200, "%s/LuaCppWrapper/UserDataInterface.h", 
 		pBaseDataGroup->m_szProjectName);
 
 	FILE* pFile = fopen(szPathFile, "w");
@@ -974,14 +1101,46 @@ bool Create_Head_Struct_Files( _Base_Data_Group* pBaseDataGroup )
 		return false;
 	}
 
-	sprintf_safe(szTemp, 200, "#ifndef COMMON_%s_H\n", pBaseDataGroup->m_szProjectName);
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "#define COMMON_%s_H\n", pBaseDataGroup->m_szProjectName);
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-
 	sprintf_safe(szTemp, 200, "//struct Common Data.\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "#include <stdio.h>\n\n");
+
+	sprintf_safe(szTemp, 200, "#ifndef _USER_DATA_INTERFACE_H_\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	sprintf_safe(szTemp, 200, "#define _USER_DATA_INTERFACE_H_\n\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	sprintf_safe(szTemp, 200, "#ifdef __cplusplus\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	sprintf_safe(szTemp, 200, "extern \"C\"\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	sprintf_safe(szTemp, 200, "{\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	sprintf_safe(szTemp, 200, "#endif\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	sprintf_safe(szTemp, 200, "#include \"lua.h\"\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	sprintf_safe(szTemp, 200, "#include \"lualib.h\"\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	sprintf_safe(szTemp, 200, "#include \"lauxlib.h\"\n\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	sprintf_safe(szTemp, 200, "int luaopen_lualib(lua_State * L);\n\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	sprintf_safe(szTemp, 200, "#ifdef __cplusplus\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	sprintf_safe(szTemp, 200, "}\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	sprintf_safe(szTemp, 200, "#endif\n\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
 	for(int i = 0; i < (int)pBaseDataGroup->m_vecBaseDataStruct.size(); i++)
@@ -995,7 +1154,7 @@ bool Create_Head_Struct_Files( _Base_Data_Group* pBaseDataGroup )
 		{
 			if(pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_nDataLen > 0)
 			{
-				sprintf_safe(szTemp, 200, "\t%s m_%s[%d]; //%s\n", 
+				sprintf_safe(szTemp, 200, "\t%s %s[%d]; //%s\n", 
 					pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataType,
 					pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataName,
 					pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_nDataLen,
@@ -1004,7 +1163,7 @@ bool Create_Head_Struct_Files( _Base_Data_Group* pBaseDataGroup )
 			}
 			else
 			{
-				sprintf_safe(szTemp, 200, "\t%s m_%s; //%s\n", 
+				sprintf_safe(szTemp, 200, "\t%s %s; //%s\n", 
 					pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataType,
 					pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataName,
 					pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataDesc);
@@ -1015,9 +1174,201 @@ bool Create_Head_Struct_Files( _Base_Data_Group* pBaseDataGroup )
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	}
 
-
-	sprintf_safe(szTemp, 200, "#endif\n");
+	
+	sprintf_safe(szTemp, 200, "#endif  //_USER_DATA_INTERFACE_H_\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	fclose(pFile);
+
+	return true;
+}
+
+bool Create_User_Data_Interface_Cpp_Files( _Base_Data_Group* pBaseDataGroup )
+{
+	//在编写H文件
+	char szTemp[1024]     = {'\0'};
+	char szPathFile[200]  = {'\0'};
+
+	sprintf_safe(szPathFile, 200, "%s/LuaCppWrapper/UserDataInterface.cpp", 
+		pBaseDataGroup->m_szProjectName);
+
+	FILE* pFile = fopen(szPathFile, "w");
+	if(NULL == pFile)
+	{
+		return false;
+	}
+
+	sprintf_safe(szTemp, 200, "#include \"UserDataInterface.h\"\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	sprintf_safe(szTemp, 200, "#include <stdio.h>\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	sprintf_safe(szTemp, 200, "#include <string.h>\n\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	for(int i = 0; i < (int)pBaseDataGroup->m_vecBaseDataStruct.size(); i++)
+	{
+		//生成Struct成员get和set方法
+		for(int j = 0; j < (int)pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo.size(); j++)
+		{
+			//生成get方法
+			sprintf_safe(szTemp, 200, "//Struct %s %s get function\n", 
+				pBaseDataGroup->m_vecBaseDataStruct[i].m_szStructName,
+				pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataName);
+			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+			sprintf_safe(szTemp, 200, "static int Get%s(lua_State *L)\n", 
+				pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataName);
+			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+			sprintf_safe(szTemp, 200, "{\n");
+			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+			sprintf_safe(szTemp, 200, "\tstruct %s *pobj = (struct %s*)lua_touserdata(L, 1);\n", 
+				pBaseDataGroup->m_vecBaseDataStruct[i].m_szStructName,
+				pBaseDataGroup->m_vecBaseDataStruct[i].m_szStructName);
+			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+			sprintf_safe(szTemp, 200, "\tluaL_argcheck(L, pobj != NULL, 1, \"Wrong Parameter\");\n");
+			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+			if (0 == strcmp("char",pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataType))
+			{
+				sprintf_safe(szTemp, 200, "\tlua_pushstring(L, pobj->%s);\n", 
+					pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataName);
+				fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+			}
+			else if (0 == strcmp("int",pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataType))
+			{
+				sprintf_safe(szTemp, 200, "\tlua_pushinteger(L, pobj->%s);\n", 
+					pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataName);
+				fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+			}
+
+			sprintf_safe(szTemp, 200, "\treturn 1;\n");
+			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+			
+			sprintf_safe(szTemp, 200, "}\n\n");
+			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+			//生成set方法
+			sprintf_safe(szTemp, 200, "//Struct %s %s set function\n", 
+				pBaseDataGroup->m_vecBaseDataStruct[i].m_szStructName,
+				pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataName);
+			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+			sprintf_safe(szTemp, 200, "static int Set%s(lua_State *L)\n", 
+				pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataName);
+			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+			sprintf_safe(szTemp, 200, "{\n");
+			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+			sprintf_safe(szTemp, 200, "\tstruct %s *pobj = (struct %s*)lua_touserdata(L, 1);\n", 
+				pBaseDataGroup->m_vecBaseDataStruct[i].m_szStructName,
+				pBaseDataGroup->m_vecBaseDataStruct[i].m_szStructName);
+			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+			sprintf_safe(szTemp, 200, "\tluaL_argcheck(L, pobj != NULL, 1, \"Wrong Parameter\");\n");
+			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+			if (0 == strcmp("char",pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataType))
+			{
+				sprintf_safe(szTemp, 200, "\tconst char *p%s = luaL_checkstring(L, 2);\n", 
+					pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataName);
+				fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+				sprintf_safe(szTemp, 200, "\tluaL_argcheck(L, p%s != NULL && p%s != \"\", 2, \"Wrong Parameter\");\n",
+					pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataName,
+					pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataName);
+				fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+				if(pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_nDataLen > 0)
+				{
+					sprintf_safe(szTemp, 200, "\tmemcpy(pobj->%s,p%s, %d);\n",
+						pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataName,
+						pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataName,
+						pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_nDataLen);
+					fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+				}
+				else
+				{
+					sprintf_safe(szTemp, 200, "\tpobj->%s = p%s[0];\n",
+						pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataName,
+						pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataName);
+					fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+				}
+			}
+			else if (0 == strcmp("int",pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataType))
+			{
+				sprintf_safe(szTemp, 200, "\tint %s = luaL_checkinteger(L, 2);\n", 
+					pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataName);
+				fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+				sprintf_safe(szTemp, 200, "\tluaL_argcheck(L, true, 2, \"Wrong Parameter\");\n");
+				fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+				sprintf_safe(szTemp, 200, "\tpobj->%s = %s;\n",
+					pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataName,
+					pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataName);
+				fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+			}
+
+			sprintf_safe(szTemp, 200, "\treturn 0;\n");
+			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+			
+			sprintf_safe(szTemp, 200, "}\n\n");
+			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		}
+
+	}
+
+	//生成luaL_Reg数组
+	sprintf_safe(szTemp, 200, "static struct luaL_Reg arrayFunc_meta[] =\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	sprintf_safe(szTemp, 200, "{\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	for(int i = 0; i < (int)pBaseDataGroup->m_vecBaseDataStruct.size(); i++)
+	{		
+		for(int j = 0; j < (int)pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo.size(); j++)
+		{			
+			sprintf_safe(szTemp, 200, "\t{ \"get%s\", Get%s },\n", 
+				pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataName,
+				pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataName);
+			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+			sprintf_safe(szTemp, 200, "\t{ \"set%s\", Set%s },\n", 
+				pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataName,
+				pBaseDataGroup->m_vecBaseDataStruct[i].m_vecBaseDataInfo[j].m_szDataName);
+			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		}
+
+	}
+	sprintf_safe(szTemp, 200, "\t{ NULL, NULL }\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	
+	sprintf_safe(szTemp, 200, "};\n\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	//生成luaopen_lualib函数
+	sprintf_safe(szTemp, 200, "int luaopen_lualib(lua_State * L)\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	sprintf_safe(szTemp, 200, "{\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	sprintf_safe(szTemp, 200, "\tluaL_newlib(L, arrayFunc_meta);\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+	sprintf_safe(szTemp, 200, "\treturn 1;\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	
+	sprintf_safe(szTemp, 200, "}\n\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);	
+
 	fclose(pFile);
 
 	return true;
