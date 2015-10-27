@@ -55,14 +55,17 @@ int main(int argc, char* argv[])
 
 	//生成H和Cpp文件
 	Create_User_Data_Interface_Head_Files(&obj_Base_Data_Group);
-	Create_User_Data_Interface_Cpp_Files(&obj_Base_Data_Group);
+
+	//暂时不用生成
+	//Create_User_Data_Interface_Cpp_Files(&obj_Base_Data_Group);
 	Create_Cpp_API_Files(&obj_Project_Cpp_Info);
+	Create_Cpp_Exec_File(&obj_Project_Cpp_Info);
 	Create_Cpp_Test_Files(&obj_Project_Lua_Info, &obj_Project_Cpp_Info, &obj_Test_API);
 
 	//生成makefile文件
 	CreateMakefile(&obj_Project_Cpp_Info);
 
-	getchar();
+	//getchar();
 
 	return 0;
 }

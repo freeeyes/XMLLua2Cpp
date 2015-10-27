@@ -73,6 +73,15 @@ void Create_Lua_Environment( _Project_Lua_Info* pLuaProject )
 	mkdir(szTempPath, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH);
 #endif
 
+	//创建C API代码实现文件夹
+	//创建LuaIncode目录
+	sprintf_safe(szTempPath, 50, "%s/LuaCppExec", pLuaProject->m_szProjectName);
+#ifdef WIN32
+	_mkdir(szTempPath);
+#else
+	mkdir(szTempPath, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH);
+#endif
+
 	//拷贝LuaCommon.h文件
 	sprintf_safe(szTempPath, 50, "%s", pLuaProject->m_szProjectName);
 	sprintf_safe(szTempFile, 100, "%s/LuaCppWrapper/LuaCommon.h", szTempPath);
@@ -124,15 +133,15 @@ bool Create_Cpp_API_Files( _Project_Cpp_Info* pCppProject )
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 		sprintf_safe(szTemp, 200, "#include <stdio.h>\n");
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-		sprintf_safe(szTemp, 200, "#include \"UserDataInterface.h\"\n\n");
+		sprintf_safe(szTemp, 200, "#include \"Exec_%s.h\"\n\n", pCppProject->m_vecCppFileList[i].m_szFileName);
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
 		sprintf_safe(szTemp, 200, "extern \"C\"\n");
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 		sprintf_safe(szTemp, 200, "{\n");
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-		//编写函数
-		for(int j = 0; j <  (int)pCppProject->m_vecCppFileList[i].m_vecFunctionList.size(); j++)
+		//编写Lua调用C API函数
+		for(int j = 0; j < (int)pCppProject->m_vecCppFileList[i].m_vecFunctionList.size(); j++)
 		{
 			_Function_Info& obj_Function_Info = (_Function_Info& )pCppProject->m_vecCppFileList[i].m_vecFunctionList[j];
 			sprintf_safe(szTemp, 200, "\t//%s\n", obj_Function_Info.m_szDesc);
@@ -148,7 +157,6 @@ bool Create_Cpp_API_Files( _Project_Cpp_Info* pCppProject )
 		fclose(pFile);
 
 		//在编写CPP文件
-		
 		sprintf_safe(szPathFile, 200, "%s/LuaCppWrapper/%s.cpp", 
 			pCppProject->m_szProjectName,
 			pCppProject->m_vecCppFileList[i].m_szFileName);
@@ -234,7 +242,61 @@ bool Create_Cpp_API_Files( _Project_Cpp_Info* pCppProject )
 				}
 			}
 
-			sprintf_safe(szTemp, 200, "\t//add your API code at here.\n\n", obj_Function_Info.m_szFunctionName);
+			sprintf_safe(szTemp, 200, "\t//add Execute API code at here.\n", obj_Function_Info.m_szFunctionName);
+			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+			//编写调用函数接口(拼接入参)
+			sprintf_safe(szTemp, 200, "\tExec_%s(", obj_Function_Info.m_szFunctionName);
+			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+			int nInPos = 0;
+			for(int k = 0; k < (int)obj_Function_Info.m_vecParamList.size(); k++)
+			{
+				if(obj_Function_Info.m_vecParamList[k].m_emParamType == PARAM_TYPE_IN)
+				{
+					if(nInPos == 0)
+					{
+						sprintf_safe(szTemp, 200, "%s", obj_Function_Info.m_vecParamList[k].m_szParamName);
+						fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+						nInPos++;
+					}
+					else
+					{
+						sprintf_safe(szTemp, 200, ", %s", obj_Function_Info.m_vecParamList[k].m_szParamName);
+						fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+						nInPos++;
+					}
+				}
+			}
+
+			//编写调用函数接口(拼接出参)
+			int nOutPos = 0;
+			for(int k = 0; k < (int)obj_Function_Info.m_vecParamList.size(); k++)
+			{
+				if(obj_Function_Info.m_vecParamList[k].m_emParamType == PARAM_TYPE_OUT)
+				{
+					if(nOutPos == 0)
+					{
+						if(nInPos == 0)
+						{
+							sprintf_safe(szTemp, 200, "%s", obj_Function_Info.m_vecParamList[k].m_szParamName);
+							fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+						}
+						else
+						{
+							sprintf_safe(szTemp, 200, ", %s", obj_Function_Info.m_vecParamList[k].m_szParamName);
+							fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+						}
+						nOutPos++;
+					}
+					else
+					{
+						sprintf_safe(szTemp, 200, ", %s", obj_Function_Info.m_vecParamList[k].m_szParamName);
+						fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+						nOutPos++;
+					}
+				}
+			}
+			sprintf_safe(szTemp, 200, ");\n\n", obj_Function_Info.m_szFunctionName);
 			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
 			//编写返回Lua参数代码
@@ -343,8 +405,8 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 	sprintf_safe(szTemp, 200, "\tRegedit_ToLua_Function(L);\n\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
-	sprintf_safe(szTemp, 200, "\tluaL_requiref(L,\"userdatainterface\",luaopen_lualib,1);\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	//sprintf_safe(szTemp, 200, "\tluaL_requiref(L,\"userdatainterface\",luaopen_lualib,1);\n");
+	//fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
 	sprintf_safe(szTemp, 200, "\treturn 1;\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
@@ -983,7 +1045,7 @@ bool CreateMakefile( _Project_Cpp_Info* pCppProject )
 
 	sprintf_safe(szTemp, 200, "#set Lua lib path\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "INCLUDES = -I./ -I../ -I/usr/include  -I../LuaCppWrapper\n");
+	sprintf_safe(szTemp, 200, "INCLUDES = -I./ -I../ -I/usr/include  -I../LuaCppWrapper -I../LuaCppExec\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	sprintf_safe(szTemp, 200, "LIBS = -L/usr/lib64 -L/usr/lib -L/usr/local/lib64 -L./ -L./Lib -L${THRIFT_LIB}  -L../ -ldl -lrt -llua\n\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
@@ -1028,12 +1090,17 @@ bool CreateMakefile( _Project_Cpp_Info* pCppProject )
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	sprintf_safe(szTemp, 200, "PATS = ");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-	sprintf_safe(szTemp, 200, "\t../LuaCppWrapper/UserDataInterface.o \\\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	//sprintf_safe(szTemp, 200, "\t../LuaCppWrapper/UserDataInterface.o \\\n");
+	//fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
 	for(int i = 0; i < (int)pCppProject->m_vecCppFileList.size(); i++)
 	{
 		sprintf_safe(szTemp, 200, "\t../LuaCppWrapper/%s.o \\\n", pCppProject->m_vecCppFileList[i].m_szFileName);
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	}
+	for(int i = 0; i < (int)pCppProject->m_vecCppFileList.size(); i++)
+	{
+		sprintf_safe(szTemp, 200, "\t../LuaCppExec/Exec_%s.o \\\n", pCppProject->m_vecCppFileList[i].m_szFileName);
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	}
 	sprintf_safe(szTemp, 200, "\t./Test_%s.o\n\n", pCppProject->m_szProjectName);
@@ -1042,12 +1109,17 @@ bool CreateMakefile( _Project_Cpp_Info* pCppProject )
 	sprintf_safe(szTemp, 200, "OBJS = ");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
-	sprintf_safe(szTemp, 200, "\tUserDataInterface.o \\\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	//sprintf_safe(szTemp, 200, "\tUserDataInterface.o \\\n");
+	//fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
 	for(int i = 0; i < (int)pCppProject->m_vecCppFileList.size(); i++)
 	{
 		sprintf_safe(szTemp, 200, "\t%s.o \\\n", pCppProject->m_vecCppFileList[i].m_szFileName);
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	}
+	for(int i = 0; i < (int)pCppProject->m_vecCppFileList.size(); i++)
+	{
+		sprintf_safe(szTemp, 200, "\tExec_%s.o \\\n", pCppProject->m_vecCppFileList[i].m_szFileName);
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	}
 	sprintf_safe(szTemp, 200, "\tTest_%s.o\n\n", pCppProject->m_szProjectName);
@@ -1131,8 +1203,8 @@ bool Create_User_Data_Interface_Head_Files(_Base_Data_Group* pBaseDataGroup)
 	sprintf_safe(szTemp, 200, "#include \"lauxlib.h\"\n\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
-	sprintf_safe(szTemp, 200, "int luaopen_lualib(lua_State * L);\n\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	//sprintf_safe(szTemp, 200, "int luaopen_lualib(lua_State * L);\n\n");
+	//fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
 	sprintf_safe(szTemp, 200, "#ifdef __cplusplus\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
@@ -1370,6 +1442,355 @@ bool Create_User_Data_Interface_Cpp_Files( _Base_Data_Group* pBaseDataGroup )
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);	
 
 	fclose(pFile);
+
+	return true;
+}
+
+bool Create_Cpp_Exec_File( _Project_Cpp_Info* pCppProject )
+{
+	char szTemp[1024]     = {'\0'};
+	char szPathFile[200]  = {'\0'};
+
+	for(int i = 0; i < (int)pCppProject->m_vecCppFileList.size(); i++)
+	{
+		//首先生成H文件。
+		sprintf_safe(szPathFile, 200, "%s/LuaCppExec/Exec_%s.h", 
+			pCppProject->m_szProjectName,
+			pCppProject->m_vecCppFileList[i].m_szFileName);
+
+		FILE* pFile = fopen(szPathFile, "w");
+		if(NULL == pFile)
+		{
+			return false;
+		}
+
+		sprintf_safe(szTemp, 200, "#ifndef _EXEC_%s_H\n", pCppProject->m_vecCppFileList[i].m_szFileName);
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		sprintf_safe(szTemp, 200, "#define _EXEC_%s_H\n\n", pCppProject->m_vecCppFileList[i].m_szFileName);
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+		sprintf_safe(szTemp, 200, "#include \"UserDataInterface.h\"\n\n");
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+		for(int j = 0; j < (int)pCppProject->m_vecCppFileList[i].m_vecFunctionList.size(); j++)
+		{
+			_Function_Info& obj_Function_Info = (_Function_Info& )pCppProject->m_vecCppFileList[i].m_vecFunctionList[j];
+			sprintf_safe(szTemp, 200, "//Exec C_API %s\n", obj_Function_Info.m_szDesc);
+			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+			sprintf_safe(szTemp, 200, "void Exec_%s(", obj_Function_Info.m_szFunctionName);
+			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+			int nInPos = 0;
+			for(int k = 0; k < (int)obj_Function_Info.m_vecParamList.size(); k++)
+			{
+				if(obj_Function_Info.m_vecParamList[k].m_emParamType == PARAM_TYPE_IN)
+				{
+					if(nInPos == 0)
+					{
+						if(obj_Function_Info.m_vecParamList[k].m_emParamClass == PARAM_CLASS_INT)
+						{
+							sprintf_safe(szTemp, 200, "%s %s", 
+								obj_Function_Info.m_vecParamList[k].m_szParamType, 
+								obj_Function_Info.m_vecParamList[k].m_szParamName);
+							fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+						}
+						else
+						{
+							sprintf_safe(szTemp, 200, "%s* %s", 
+								obj_Function_Info.m_vecParamList[k].m_szParamType, 
+								obj_Function_Info.m_vecParamList[k].m_szParamName);
+							fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+						}
+
+						nInPos++;
+					}
+					else
+					{
+						if(obj_Function_Info.m_vecParamList[k].m_emParamClass == PARAM_CLASS_INT)
+						{
+							sprintf_safe(szTemp, 200, ", %s %s",
+								obj_Function_Info.m_vecParamList[k].m_szParamType, 
+								obj_Function_Info.m_vecParamList[k].m_szParamName);
+							fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+						}
+						else
+						{
+							sprintf_safe(szTemp, 200, ", %s* %s",
+								obj_Function_Info.m_vecParamList[k].m_szParamType, 
+								obj_Function_Info.m_vecParamList[k].m_szParamName);
+							fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+						}
+
+						nInPos++;
+					}
+				}
+			}
+
+			//编写调用函数接口(拼接出参)
+			int nOutPos = 0;
+			for(int k = 0; k < (int)obj_Function_Info.m_vecParamList.size(); k++)
+			{
+				if(obj_Function_Info.m_vecParamList[k].m_emParamType == PARAM_TYPE_OUT)
+				{
+					if(nOutPos == 0)
+					{
+						if(nInPos == 0)
+						{
+							if(obj_Function_Info.m_vecParamList[k].m_emParamClass == PARAM_CLASS_INT)
+							{
+								sprintf_safe(szTemp, 200, "%s& %s", 
+									obj_Function_Info.m_vecParamList[k].m_szParamType, 
+									obj_Function_Info.m_vecParamList[k].m_szParamName);
+								fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+							}
+							else if(obj_Function_Info.m_vecParamList[k].m_emParamClass == PARAM_CLASS_STRING)
+							{
+								sprintf_safe(szTemp, 200, "%s* %s", 
+									obj_Function_Info.m_vecParamList[k].m_szParamType, 
+									obj_Function_Info.m_vecParamList[k].m_szParamName);
+								fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+							}
+							else
+							{
+								sprintf_safe(szTemp, 200, "%s*& %s", 
+									obj_Function_Info.m_vecParamList[k].m_szParamType, 
+									obj_Function_Info.m_vecParamList[k].m_szParamName);
+								fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+							}
+						}
+						else
+						{
+							if(obj_Function_Info.m_vecParamList[k].m_emParamClass == PARAM_CLASS_INT)
+							{
+								sprintf_safe(szTemp, 200, ", %s& %s", 
+									obj_Function_Info.m_vecParamList[k].m_szParamType, 
+									obj_Function_Info.m_vecParamList[k].m_szParamName);
+								fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+							}
+							else if(obj_Function_Info.m_vecParamList[k].m_emParamClass == PARAM_CLASS_STRING)
+							{
+								sprintf_safe(szTemp, 200, ", %s* %s", 
+									obj_Function_Info.m_vecParamList[k].m_szParamType, 
+									obj_Function_Info.m_vecParamList[k].m_szParamName);
+								fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+							}
+							else
+							{
+								sprintf_safe(szTemp, 200, ", %s*& %s", 
+									obj_Function_Info.m_vecParamList[k].m_szParamType, 
+									obj_Function_Info.m_vecParamList[k].m_szParamName);
+								fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+							}
+						}
+						nOutPos++;
+					}
+					else
+					{
+						if(obj_Function_Info.m_vecParamList[k].m_emParamClass == PARAM_CLASS_INT)
+						{
+							sprintf_safe(szTemp, 200, ", %s& %s", 
+								obj_Function_Info.m_vecParamList[k].m_szParamType, 
+								obj_Function_Info.m_vecParamList[k].m_szParamName);
+							fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+						}
+						else if(obj_Function_Info.m_vecParamList[k].m_emParamClass == PARAM_CLASS_STRING)
+						{
+							sprintf_safe(szTemp, 200, ", %s* %s", 
+								obj_Function_Info.m_vecParamList[k].m_szParamType, 
+								obj_Function_Info.m_vecParamList[k].m_szParamName);
+							fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+						}
+						else
+						{
+							sprintf_safe(szTemp, 200, ", %s*& %s", 
+								obj_Function_Info.m_vecParamList[k].m_szParamType, 
+								obj_Function_Info.m_vecParamList[k].m_szParamName);
+							fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+						}
+
+						nOutPos++;
+					}
+				}
+			}
+			sprintf_safe(szTemp, 200, ");\n\n", obj_Function_Info.m_szFunctionName);
+			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		}
+
+		sprintf_safe(szTemp, 200, "#endif\n");
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+		fclose(pFile);
+	}
+
+	//编写CPP
+	for(int i = 0; i < (int)pCppProject->m_vecCppFileList.size(); i++)
+	{
+		//首先生成H文件。
+		sprintf_safe(szPathFile, 200, "%s/LuaCppExec/Exec_%s.cpp", 
+			pCppProject->m_szProjectName,
+			pCppProject->m_vecCppFileList[i].m_szFileName);
+
+		FILE* pFile = fopen(szPathFile, "w");
+		if(NULL == pFile)
+		{
+			return false;
+		}
+
+		sprintf_safe(szTemp, 200, "#include \"Exec_%s.h\"\n\n", pCppProject->m_vecCppFileList[i].m_szFileName);
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+		for(int j = 0; j < (int)pCppProject->m_vecCppFileList[i].m_vecFunctionList.size(); j++)
+		{
+			_Function_Info& obj_Function_Info = (_Function_Info& )pCppProject->m_vecCppFileList[i].m_vecFunctionList[j];
+			sprintf_safe(szTemp, 200, "//Exec C_API %s\n", obj_Function_Info.m_szDesc);
+			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+			sprintf_safe(szTemp, 200, "void Exec_%s(", obj_Function_Info.m_szFunctionName);
+			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+			int nInPos = 0;
+			for(int k = 0; k < (int)obj_Function_Info.m_vecParamList.size(); k++)
+			{
+				if(obj_Function_Info.m_vecParamList[k].m_emParamType == PARAM_TYPE_IN)
+				{
+					if(nInPos == 0)
+					{
+						if(obj_Function_Info.m_vecParamList[k].m_emParamClass == PARAM_CLASS_INT)
+						{
+							sprintf_safe(szTemp, 200, "%s %s", 
+								obj_Function_Info.m_vecParamList[k].m_szParamType, 
+								obj_Function_Info.m_vecParamList[k].m_szParamName);
+							fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+						}
+						else
+						{
+							sprintf_safe(szTemp, 200, "%s* %s", 
+								obj_Function_Info.m_vecParamList[k].m_szParamType, 
+								obj_Function_Info.m_vecParamList[k].m_szParamName);
+							fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+						}
+						nInPos++;
+					}
+					else
+					{
+						if(obj_Function_Info.m_vecParamList[k].m_emParamClass == PARAM_CLASS_INT)
+						{
+							sprintf_safe(szTemp, 200, ", %s %s",
+								obj_Function_Info.m_vecParamList[k].m_szParamType, 
+								obj_Function_Info.m_vecParamList[k].m_szParamName);
+							fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+						}
+						else
+						{
+							sprintf_safe(szTemp, 200, "%s* %s", 
+								obj_Function_Info.m_vecParamList[k].m_szParamType, 
+								obj_Function_Info.m_vecParamList[k].m_szParamName);
+							fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+						}
+
+						nInPos++;
+					}
+				}
+			}
+
+			//编写调用函数接口(拼接出参)
+			int nOutPos = 0;
+			for(int k = 0; k < (int)obj_Function_Info.m_vecParamList.size(); k++)
+			{
+				if(obj_Function_Info.m_vecParamList[k].m_emParamType == PARAM_TYPE_OUT)
+				{
+					if(nOutPos == 0)
+					{
+						if(nInPos == 0)
+						{
+							if(obj_Function_Info.m_vecParamList[k].m_emParamClass == PARAM_CLASS_INT)
+							{
+								sprintf_safe(szTemp, 200, "%s& %s", 
+									obj_Function_Info.m_vecParamList[k].m_szParamType, 
+									obj_Function_Info.m_vecParamList[k].m_szParamName);
+								fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+							}
+							else if(obj_Function_Info.m_vecParamList[k].m_emParamClass == PARAM_CLASS_STRING)
+							{
+								sprintf_safe(szTemp, 200, "%s* %s", 
+									obj_Function_Info.m_vecParamList[k].m_szParamType, 
+									obj_Function_Info.m_vecParamList[k].m_szParamName);
+								fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+							}
+							else
+							{
+								sprintf_safe(szTemp, 200, "%s*& %s", 
+									obj_Function_Info.m_vecParamList[k].m_szParamType, 
+									obj_Function_Info.m_vecParamList[k].m_szParamName);
+								fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+							}
+						}
+						else
+						{
+							if(obj_Function_Info.m_vecParamList[k].m_emParamClass == PARAM_CLASS_INT)
+							{
+								sprintf_safe(szTemp, 200, ", %s& %s", 
+									obj_Function_Info.m_vecParamList[k].m_szParamType, 
+									obj_Function_Info.m_vecParamList[k].m_szParamName);
+								fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+							}
+							else if(obj_Function_Info.m_vecParamList[k].m_emParamClass == PARAM_CLASS_STRING)
+							{
+								sprintf_safe(szTemp, 200, ", %s* %s", 
+									obj_Function_Info.m_vecParamList[k].m_szParamType, 
+									obj_Function_Info.m_vecParamList[k].m_szParamName);
+								fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+							}
+							else
+							{
+								sprintf_safe(szTemp, 200, ", %s*& %s", 
+									obj_Function_Info.m_vecParamList[k].m_szParamType, 
+									obj_Function_Info.m_vecParamList[k].m_szParamName);
+								fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+							}
+
+						}
+						nOutPos++;
+					}
+					else
+					{
+						if(obj_Function_Info.m_vecParamList[k].m_emParamClass == PARAM_CLASS_INT)
+						{
+							sprintf_safe(szTemp, 200, ", %s& %s", 
+								obj_Function_Info.m_vecParamList[k].m_szParamType, 
+								obj_Function_Info.m_vecParamList[k].m_szParamName);
+							fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+						}
+						else if(obj_Function_Info.m_vecParamList[k].m_emParamClass == PARAM_CLASS_STRING)
+						{
+							sprintf_safe(szTemp, 200, ", %s* %s", 
+								obj_Function_Info.m_vecParamList[k].m_szParamType, 
+								obj_Function_Info.m_vecParamList[k].m_szParamName);
+							fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+						}
+						else
+						{
+							sprintf_safe(szTemp, 200, ", %s*& %s", 
+								obj_Function_Info.m_vecParamList[k].m_szParamType, 
+								obj_Function_Info.m_vecParamList[k].m_szParamName);
+							fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+						}
+
+						nOutPos++;
+					}
+				}
+			}
+			sprintf_safe(szTemp, 200, ")\n", obj_Function_Info.m_szFunctionName);
+			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+			sprintf_safe(szTemp, 200, "{\n", obj_Function_Info.m_szFunctionName);
+			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+			sprintf_safe(szTemp, 200, "\t//please add your code at here.\n", obj_Function_Info.m_szFunctionName);
+			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+			sprintf_safe(szTemp, 200, "}\n\n", obj_Function_Info.m_szFunctionName);
+			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		}
+
+		fclose(pFile);
+	}
 
 	return true;
 }
