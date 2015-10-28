@@ -42,6 +42,9 @@
     <ClInclude Include="CppFileCreate.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="ParseCAPIFile.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="XMLLuaToCPP.cpp">
@@ -66,6 +69,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="CppFileCreate.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ParseCAPIFile.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
