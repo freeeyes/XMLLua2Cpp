@@ -5,10 +5,10 @@ default:all
 
 # 主应用文件列表
 PATS = ./TinyXML/tinystr.o ./TinyXML/tinyxml.o ./TinyXML/tinyxmlerror.o ./TinyXML/tinyxmlparser.o \
-	   XmlOpeation.o LuaFileCreate.o CppFileCreate.o XMLLuaToCPP.o
+	   XmlOpeation.o LuaFileCreate.o CppFileCreate.o XMLLuaToCPP.o ParseCAPIFile.o
 
 LIB_BASE_OBJS = tinystr.o tinyxml.o tinyxmlerror.o tinyxmlparser.o \
-				XmlOpeation.o LuaFileCreate.o CppFileCreate.o XMLLuaToCPP.o
+				XmlOpeation.o LuaFileCreate.o CppFileCreate.o XMLLuaToCPP.o ParseCAPIFile.o
 LIB_BASE = XML2LuaCpp
 
 all: XML2LuaCpp clear

@@ -10,7 +10,9 @@
 #endif
 #include<iostream>
 #include<fstream>
-using namespace std ;
+using namespace std;
+
+#include "ParseCAPIFile.h"
 
 void Tranfile(const char* pFileSrc, const char* pFileDes);
 void Create_Lua_Environment(_Project_Lua_Info* pLuaProject);

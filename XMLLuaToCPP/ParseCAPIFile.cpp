@@ -16,7 +16,7 @@ bool Parse_Function_Name(char* pLine, char* pFunctionName)
 	{
 		if(pLine[i] == ' ' && nBegin == 0)
 		{
-			nBegin = i;
+			nBegin = i + 1;
 		}
 		
 		if(pLine[i] == '(')
@@ -30,7 +30,7 @@ bool Parse_Function_Name(char* pLine, char* pFunctionName)
 	{
 		memcpy(pFunctionName, (char*)pLine + nBegin, nEnd - nBegin);
 		pFunctionName[nEnd - nBegin] = '\0';
-		pFunctionName = ltrim(pFunctionName);
+		sprintf_safe(pFunctionName, 200, "%s", ltrim(pFunctionName));
 		return true;
 	}
 	else
@@ -42,34 +42,24 @@ bool Parse_Function_Name(char* pLine, char* pFunctionName)
 void Parse_File_Include(char* pData, int nFileSize, _File_Info& obj_File_Info)
 {
 	//中包含的其他.h
-	char* pIncludeBegin = strstr(pData, "#include");
-	while(pIncludeBegin)
+	char* pIncludeBegin = strstr(pData, CAPI_INCLUDE_BEGIN);
+	char* pIncludeEnd = strstr(pData, CAPI_INCLUDE_END);
+
+	if(pIncludeBegin != NULL && pIncludeEnd != NULL && (int)(pIncludeEnd - pIncludeBegin) > 0)
 	{
-		int nBegin = (int)(pIncludeBegin - pData);
-		int nIncludeLen = nFileSize - nBegin;
-		int nPosLen = 0;
-		for(int i = nBegin; i < nFileSize; i++)
+		//有多余的代码，拷贝出来过来
+		int nPosBegin = (int)(pIncludeBegin + (int)strlen(CAPI_INCLUDE_BEGIN) - pData);
+		int nPosEnd   = (int)(pIncludeEnd - pData);
+
+		if(nPosEnd - nPosBegin > 0)
 		{
-			if(pData[i] == '\n')
-			{
-				nIncludeLen = nPosLen;
-				break;
-			}
-			nPosLen++;
+			char* pTemp = new char[nPosEnd - nPosBegin + 1];
+			memcpy(pTemp, (char* )pData + nPosBegin, nPosEnd - nPosBegin);
+			pTemp[nPosEnd - nPosBegin] = '\0';
+			obj_File_Info.m_strExtHead = (string)pTemp;
+			delete[] pTemp;
 		}
-
-		char szTemp[200] = {'\0'};
-		memcpy(szTemp, pIncludeBegin, nIncludeLen);
-		szTemp[nIncludeLen] = '\0';
-
-		if(strcmp(szTemp, "#include \"UserDataInterface.h\"") != 0)
-		{
-			_FileInclude obj_FileInclude;
-			obj_FileInclude.m_strIncoude = (string)szTemp;
-			obj_File_Info.m_vecFileInclude.push_back(obj_FileInclude);
-		}
-
-		pIncludeBegin = strstr(pIncludeBegin + nPosLen, "#include");
+		
 	}
 }
 
@@ -81,7 +71,15 @@ void Parse_File_Function_Info(char* pData, int nFileSize, _File_Info& obj_File_I
 	bool blIsLineBehin = true;
 	bool blIsContent   = false;
 
-	for(int i = 0; i < nFileSize; i++)
+	char szTag[100] = {'\0'};
+	memcpy(szTag, CAPI_INCLUDE_END, strlen(CAPI_INCLUDE_END) - 1);
+	szTag[strlen(CAPI_INCLUDE_END) - 1] = '\0';
+
+	char* pIncludeEnd = strstr(pData, szTag);
+	int nPos = (int)(pIncludeEnd - pData) + (int)strlen(CAPI_INCLUDE_END);
+
+	nLineBegin = nPos;
+	for(int i = nPos; i < nFileSize; i++)
 	{
 		if(pData[i] == '\n')
 		{
@@ -89,38 +87,42 @@ void Parse_File_Function_Info(char* pData, int nFileSize, _File_Info& obj_File_I
 			if(nLineEnd > nLineBegin)
 			{
 				//找出一行文本
-				memcpy(szLine, &pData[nLineBegin], nLineEnd - nLineBegin);
-				szLine[nLineEnd - nLineBegin] = '\0';
+				memcpy(szLine, &pData[nLineBegin], nLineEnd - nLineBegin + 1);
+				szLine[nLineEnd - nLineBegin + 1] = '\0';
 
-				//如果文本第一个字节不是#,\n,\r,\中的任何一个，则视为
-				if(szLine[0] != '#' && szLine[0] != '\r' &&
-					szLine[0] != '\n' && szLine[0] != '/')
+				//首先判断是否是函数体还是函数名
+				if(szLine[0] == '{')
 				{
-					if(szLine[0] == '{')
-					{
-						blIsContent = true;
-						continue;
-					}
-					else if(szLine[0] == '}')
-					{
-						blIsContent = false;
-						continue;
-					}
+					blIsContent = true;
+					nLineBegin = i + 1;
+					continue;
+				}
+				else if(szLine[0] == '}')
+				{
+					blIsContent = false;
+					nLineBegin = i + 1;
+					continue;
+				}
 
-					if(blIsContent == false)
+				if(false == blIsContent)
+				{
+					//如果文本第一个字节不是#,\n,\r,\中的任何一个，则视为
+					if(szLine[0] != '#' && szLine[0] != '\r' &&
+						szLine[0] != '\n' && szLine[0] != '/')
 					{
 						//这个为函数头
 						_FunctionCode obj_FunctionCode;
+						obj_FunctionCode.m_strFuncCode = (string)szLine;
 						Parse_Function_Name(szLine, obj_FunctionCode.m_szFuncName);
 						obj_File_Info.m_vecFunctionCode.push_back(obj_FunctionCode);
 					}
-					else
-					{
-						//这个是函数体
-						int nIndex = obj_File_Info.m_vecFunctionCode.size() - 1;
-						_FunctionCode& obj_FunctionCode = obj_File_Info.m_vecFunctionCode[nIndex];
-						obj_FunctionCode.m_strCode += (string)szLine;
-					}
+				}
+				else
+				{
+					//这个是函数体
+					int nIndex = obj_File_Info.m_vecFunctionCode.size() - 1;
+					_FunctionCode& obj_FunctionCode = obj_File_Info.m_vecFunctionCode[nIndex];
+					obj_FunctionCode.m_strCode += (string)szLine;
 				}
 
 				nLineBegin = i + 1;
@@ -134,7 +136,7 @@ void Parse_File_Function_Info(char* pData, int nFileSize, _File_Info& obj_File_I
 	}
 }
 
-bool Parse_CAPI_H_File(const char* pFileName, _File_Info& obj_File_Info)
+bool Parse_CAPI_File(const char* pFileName, _File_Info& obj_File_Info)
 {
 	char szBakFileName[200] = {'\0'};
 	char* pFileBuff = NULL;
@@ -143,12 +145,9 @@ bool Parse_CAPI_H_File(const char* pFileName, _File_Info& obj_File_Info)
 	{
 		return false;
 	}
-	int nFileLen = strlen(pFileName) - 2;
-	memcpy(szBakFileName, pFileName, nFileLen);
-	szBakFileName[nFileLen] = '\0';
-	sprintf_safe(szBakFileName, 200, "%s.hbak", szBakFileName);
+	sprintf_safe(szBakFileName, 200, "%s.bak", pFileName);
 
-	FILE* pFile = fopen(pFileName, "r");
+	FILE* pFile = fopen(pFileName, "rb+");
 	if(NULL == pFile)
 	{
 		return false;
@@ -164,7 +163,7 @@ bool Parse_CAPI_H_File(const char* pFileName, _File_Info& obj_File_Info)
 	fread(pFileBuff, nFileSize, sizeof(char), pFile);
 	pFileBuff[nFileSize] = '\0';
 	fclose(pFile);
-	FILE* pBakFile = fopen(szBakFileName, "w");
+	FILE* pBakFile = fopen(szBakFileName, "wb");
 	if(NULL == pBakFile)
 	{
 		return false;
@@ -182,3 +181,22 @@ bool Parse_CAPI_H_File(const char* pFileName, _File_Info& obj_File_Info)
 	return true;
 }
 
+bool Search_CAPI_Code(const char* pFuncName, _File_Info& obj_File_Info, string& strCode)
+{
+	char szFunctionName[100] = {'\0'};
+	sprintf_safe(szFunctionName, 100, "Exec_%s", pFuncName);
+
+	for(int i = 0; i < (int)obj_File_Info.m_vecFunctionCode.size(); i++)
+	{
+		_FunctionCode& obj_FunctionCode = obj_File_Info.m_vecFunctionCode[i];
+		if(strcmp(obj_FunctionCode.m_szFuncName, szFunctionName) == 0)
+		{
+			//如果找到了
+			strCode = obj_FunctionCode.m_strCode;
+			obj_FunctionCode.m_blIsUsed = true;
+			return true;
+		}
+	}
+
+	return false;
+}

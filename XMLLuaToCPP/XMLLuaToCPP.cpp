@@ -6,7 +6,6 @@
 
 #include "LuaFileCreate.h"
 #include "CppFileCreate.h"
-#include "ParseCAPIFile.h"
 
 int main(int argc, char* argv[])
 {
@@ -14,10 +13,6 @@ int main(int argc, char* argv[])
 	_Project_Cpp_Info obj_Project_Cpp_Info;
 	_Test_API         obj_Test_API;
 	_Base_Data_Group  obj_Base_Data_Group;
-
-	//≤‚ ‘¥˙¬Î
-	//_File_Info obj_File_Info;
-	//Parse_CAPI_H_File(".\\autotest\\LuaCppExec\\Exec_LuaAPI_Player.h", obj_File_Info);
 	
 	bool blRet = Read_Lua_File_XML("LuaFileInfo.xml", &obj_Project_Lua_Info);
 	if(true != blRet)

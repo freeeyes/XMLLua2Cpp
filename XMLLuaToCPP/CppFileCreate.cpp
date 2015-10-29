@@ -1458,7 +1458,11 @@ bool Create_Cpp_Exec_File( _Project_Cpp_Info* pCppProject )
 			pCppProject->m_szProjectName,
 			pCppProject->m_vecCppFileList[i].m_szFileName);
 
-		FILE* pFile = fopen(szPathFile, "w");
+		//查找是否已存在此文件，开始分解其中的数据，并合并到新文件中去。
+		_File_Info obj_H_File_Info;
+		Parse_CAPI_File(szPathFile, obj_H_File_Info);
+
+		FILE* pFile = fopen(szPathFile, "wb");
 		if(NULL == pFile)
 		{
 			return false;
@@ -1472,6 +1476,18 @@ bool Create_Cpp_Exec_File( _Project_Cpp_Info* pCppProject )
 		sprintf_safe(szTemp, 200, "#include \"UserDataInterface.h\"\n\n");
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
+		sprintf_safe(szTemp, 200, CAPI_INCLUDE_BEGIN);
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+		//如果原来代码中包含头引用，复制过来
+		if(obj_H_File_Info.m_strExtHead.length() > 0)
+		{			
+			fwrite(obj_H_File_Info.m_strExtHead.c_str(), obj_H_File_Info.m_strExtHead.length(), sizeof(char), pFile);
+		}
+
+		sprintf_safe(szTemp, 200, CAPI_INCLUDE_END);
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
 		for(int j = 0; j < (int)pCppProject->m_vecCppFileList[i].m_vecFunctionList.size(); j++)
 		{
 			_Function_Info& obj_Function_Info = (_Function_Info& )pCppProject->m_vecCppFileList[i].m_vecFunctionList[j];
@@ -1479,6 +1495,10 @@ bool Create_Cpp_Exec_File( _Project_Cpp_Info* pCppProject )
 			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 			sprintf_safe(szTemp, 200, "void Exec_%s(", obj_Function_Info.m_szFunctionName);
 			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+			//比较是否有用到的函数头
+			string strCode;
+			Search_CAPI_Code(obj_Function_Info.m_szFunctionName, obj_H_File_Info, strCode);
 
 			int nInPos = 0;
 			for(int k = 0; k < (int)obj_Function_Info.m_vecParamList.size(); k++)
@@ -1616,6 +1636,18 @@ bool Create_Cpp_Exec_File( _Project_Cpp_Info* pCppProject )
 			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 		}
 
+		//把没用到的函数补充进去
+		for(int m = 0; m < (int)obj_H_File_Info.m_vecFunctionCode.size(); m++)
+		{
+			if(obj_H_File_Info.m_vecFunctionCode[m].m_blIsUsed == false)
+			{
+				fwrite(obj_H_File_Info.m_vecFunctionCode[m].m_strFuncCode.c_str(), 
+					obj_H_File_Info.m_vecFunctionCode[m].m_strFuncCode.length(), sizeof(char), pFile);
+				sprintf_safe(szTemp, 200, "\n");
+				fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+			}
+		}
+
 		sprintf_safe(szTemp, 200, "#endif\n");
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
@@ -1630,13 +1662,29 @@ bool Create_Cpp_Exec_File( _Project_Cpp_Info* pCppProject )
 			pCppProject->m_szProjectName,
 			pCppProject->m_vecCppFileList[i].m_szFileName);
 
-		FILE* pFile = fopen(szPathFile, "w");
+		//查找是否已存在此文件，开始分解其中的数据，并合并到新文件中去。
+		_File_Info obj_CPP_File_Info;
+		Parse_CAPI_File(szPathFile, obj_CPP_File_Info);
+
+		FILE* pFile = fopen(szPathFile, "wb");
 		if(NULL == pFile)
 		{
 			return false;
 		}
 
 		sprintf_safe(szTemp, 200, "#include \"Exec_%s.h\"\n\n", pCppProject->m_vecCppFileList[i].m_szFileName);
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+		sprintf_safe(szTemp, 200, CAPI_INCLUDE_BEGIN);
+		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+		//如果原来代码中包含头引用，复制过来
+		if(obj_CPP_File_Info.m_strExtHead.length() > 0)
+		{			
+			fwrite(obj_CPP_File_Info.m_strExtHead.c_str(), obj_CPP_File_Info.m_strExtHead.length(), sizeof(char), pFile);
+		}
+
+		sprintf_safe(szTemp, 200, CAPI_INCLUDE_END);
 		fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
 		for(int j = 0; j < (int)pCppProject->m_vecCppFileList[i].m_vecFunctionList.size(); j++)
@@ -1646,6 +1694,10 @@ bool Create_Cpp_Exec_File( _Project_Cpp_Info* pCppProject )
 			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 			sprintf_safe(szTemp, 200, "void Exec_%s(", obj_Function_Info.m_szFunctionName);
 			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+			//比较是否有用到的函数头
+			string strCode;
+			Search_CAPI_Code(obj_Function_Info.m_szFunctionName, obj_CPP_File_Info, strCode);
 
 			int nInPos = 0;
 			for(int k = 0; k < (int)obj_Function_Info.m_vecParamList.size(); k++)
@@ -1783,10 +1835,36 @@ bool Create_Cpp_Exec_File( _Project_Cpp_Info* pCppProject )
 			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 			sprintf_safe(szTemp, 200, "{\n", obj_Function_Info.m_szFunctionName);
 			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-			sprintf_safe(szTemp, 200, "\t//please add your code at here.\n", obj_Function_Info.m_szFunctionName);
-			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+			if(strCode.length() > 0)
+			{
+				fwrite(strCode.c_str(), strCode.length(), sizeof(char), pFile);
+			}
+			else
+			{
+				sprintf_safe(szTemp, 200, "\t//please add your code at here.\n", obj_Function_Info.m_szFunctionName);
+				fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+			}
+
 			sprintf_safe(szTemp, 200, "}\n\n", obj_Function_Info.m_szFunctionName);
 			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+		}
+
+		//把没用到的函数补充进去
+		for(int m = 0; m < (int)obj_CPP_File_Info.m_vecFunctionCode.size(); m++)
+		{
+			if(obj_CPP_File_Info.m_vecFunctionCode[m].m_blIsUsed == false)
+			{
+				fwrite(obj_CPP_File_Info.m_vecFunctionCode[m].m_strFuncCode.c_str(), 
+					obj_CPP_File_Info.m_vecFunctionCode[m].m_strFuncCode.length(), sizeof(char), pFile);
+				sprintf_safe(szTemp, 200, "{\n");
+				fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+				fwrite(obj_CPP_File_Info.m_vecFunctionCode[m].m_strCode.c_str(), 
+					obj_CPP_File_Info.m_vecFunctionCode[m].m_strCode.length(), sizeof(char), pFile);
+				sprintf_safe(szTemp, 200, "}\n");
+				fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+				sprintf_safe(szTemp, 200, "\n\n");
+				fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+			}
 		}
 
 		fclose(pFile);
