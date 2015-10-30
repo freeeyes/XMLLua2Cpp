@@ -87,6 +87,7 @@
     <ClInclude Include="CppFileCreate.h" />
     <ClInclude Include="LuaFileCreate.h" />
     <ClInclude Include="ParseCAPIFile.h" />
+    <ClInclude Include="ParseLuaFile.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="TinyXML\tinystr.h" />
     <ClInclude Include="TinyXML\tinyxml.h" />
@@ -96,6 +97,7 @@
     <ClCompile Include="CppFileCreate.cpp" />
     <ClCompile Include="LuaFileCreate.cpp" />
     <ClCompile Include="ParseCAPIFile.cpp" />
+    <ClCompile Include="ParseLuaFile.cpp" />
     <ClCompile Include="TinyXML\tinystr.cpp" />
     <ClCompile Include="TinyXML\tinyxml.cpp" />
     <ClCompile Include="TinyXML\tinyxmlerror.cpp" />

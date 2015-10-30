@@ -106,7 +106,7 @@ bool Create_Cpp_API_Files( _Project_Cpp_Info* pCppProject )
 			pCppProject->m_szProjectName,
 			pCppProject->m_vecCppFileList[i].m_szFileName);
 
-		FILE* pFile = fopen(szPathFile, "w");
+		FILE* pFile = fopen(szPathFile, "wb");
 		if(NULL == pFile)
 		{
 			return false;
@@ -161,7 +161,7 @@ bool Create_Cpp_API_Files( _Project_Cpp_Info* pCppProject )
 			pCppProject->m_szProjectName,
 			pCppProject->m_vecCppFileList[i].m_szFileName);
 
-		pFile = fopen(szPathFile, "w");
+		pFile = fopen(szPathFile, "wb");
 		if(NULL == pFile)
 		{
 			return false;
@@ -351,7 +351,7 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 	sprintf_safe(szPathFile, 200, "%s/LuaCppWrapper/LuaCppWrapper.h", 
 		pCppProject->m_szProjectName);
 
-	FILE* pFile = fopen(szPathFile, "w");
+	FILE* pFile = fopen(szPathFile, "wb");
 	if(NULL == pFile)
 	{
 		return false;
@@ -642,7 +642,7 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 		pCppProject->m_szProjectName,
 		pCppProject->m_szProjectName);
 
-	pFile = fopen(szPathFile, "w");
+	pFile = fopen(szPathFile, "wb");
 	if(NULL == pFile)
 	{
 		return false;
@@ -1023,7 +1023,7 @@ bool CreateMakefile( _Project_Cpp_Info* pCppProject )
 	sprintf_safe(szPathFile, 200, "%s/Test/Makefile.define", 
 		pCppProject->m_szProjectName);
 
-	FILE* pFile = fopen(szPathFile, "w");
+	FILE* pFile = fopen(szPathFile, "wb");
 	if(NULL == pFile)
 	{
 		return false;
@@ -1080,7 +1080,7 @@ bool CreateMakefile( _Project_Cpp_Info* pCppProject )
 	sprintf_safe(szPathFile, 200, "%s/Test/Makefile", 
 		pCppProject->m_szProjectName);
 
-	pFile = fopen(szPathFile, "w");
+	pFile = fopen(szPathFile, "wb");
 	if(NULL == pFile)
 	{
 		return false;
@@ -1167,7 +1167,7 @@ bool Create_User_Data_Interface_Head_Files(_Base_Data_Group* pBaseDataGroup)
 	sprintf_safe(szPathFile, 200, "%s/LuaCppWrapper/UserDataInterface.h", 
 		pBaseDataGroup->m_szProjectName);
 
-	FILE* pFile = fopen(szPathFile, "w");
+	FILE* pFile = fopen(szPathFile, "wb");
 	if(NULL == pFile)
 	{
 		return false;
@@ -1264,7 +1264,7 @@ bool Create_User_Data_Interface_Cpp_Files( _Base_Data_Group* pBaseDataGroup )
 	sprintf_safe(szPathFile, 200, "%s/LuaCppWrapper/UserDataInterface.cpp", 
 		pBaseDataGroup->m_szProjectName);
 
-	FILE* pFile = fopen(szPathFile, "w");
+	FILE* pFile = fopen(szPathFile, "wb");
 	if(NULL == pFile)
 	{
 		return false;

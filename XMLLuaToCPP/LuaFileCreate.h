@@ -1,7 +1,7 @@
 #ifndef _LUAFILECREATE_H
 #define _LUAFILECREATE_H
 
-#include "Common.h"
+#include "ParseLuaFile.h"
 #include "XmlOpeation.h"
 #ifdef WIN32
 #include <direct.h>
