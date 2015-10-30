@@ -357,6 +357,10 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 		return false;
 	}
 
+	sprintf_safe(szTemp, 200, "#ifndef _LUACPPWRAPPER_H\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+	sprintf_safe(szTemp, 200, "#define _LUACPPWRAPPER_H\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	sprintf_safe(szTemp, 200, "//API Lua Project.\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	//编写引用头文件
@@ -635,6 +639,8 @@ bool Create_Cpp_Test_Files( _Project_Lua_Info* pLuaProject, _Project_Cpp_Info* p
 		}
 	}
 
+	sprintf_safe(szTemp, 200, "#endif\n\n");
+	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 	fclose(pFile);
 
 	//生成测试工程文件

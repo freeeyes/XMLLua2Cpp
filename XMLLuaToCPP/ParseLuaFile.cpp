@@ -72,7 +72,7 @@ bool Parse_Lua_File( const char* pFileName, vec_FileLine& obj_vec_FileLine )
 bool Searsh_Lua_File(const char* pFunctionName, const char* pFunctionLine, string strFuncBody, vec_FileLine& obj_vec_FileLine)
 {
 	char szFindText[300] = {'\0'};
-	sprintf_safe(szFindText, 300, "function %s", pFunctionName);
+	sprintf_safe(szFindText, 300, "function %s(", pFunctionName);
 
 	for(int i = 0; i < (int)obj_vec_FileLine.size(); i++)
 	{
