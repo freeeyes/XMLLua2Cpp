@@ -60,6 +60,9 @@ int main(int argc, char* argv[])
 	//Create_User_Data_Interface_Cpp_Files(&obj_Base_Data_Group);
 	Create_Cpp_API_Files(&obj_Project_Cpp_Info);
 	Create_Cpp_Exec_File(&obj_Project_Cpp_Info);
+	Create_LuaCpp_Wrapper_Head_File(&obj_Project_Lua_Info, &obj_Project_Cpp_Info);
+	Create_LuaCpp_Wrapper_Cpp_File(&obj_Project_Lua_Info, &obj_Project_Cpp_Info);
+
 	Create_Cpp_Test_Files(&obj_Project_Lua_Info, &obj_Project_Cpp_Info, &obj_Test_API);
 
 	//生成makefile文件
