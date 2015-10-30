@@ -1491,14 +1491,22 @@ bool Create_Cpp_Exec_File( _Project_Cpp_Info* pCppProject )
 		for(int j = 0; j < (int)pCppProject->m_vecCppFileList[i].m_vecFunctionList.size(); j++)
 		{
 			_Function_Info& obj_Function_Info = (_Function_Info& )pCppProject->m_vecCppFileList[i].m_vecFunctionList[j];
-			sprintf_safe(szTemp, 200, "//Exec C_API %s\n", obj_Function_Info.m_szDesc);
-			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+
+			//比较是否有用到的函数头
+			_FunctionCode* pFunctionCode = NULL;
+			Search_CAPI_Code(obj_Function_Info.m_szFunctionName, obj_H_File_Info, pFunctionCode);
+			if(NULL != pFunctionCode && pFunctionCode->m_strNotes.length() > 0)
+			{
+				fwrite(pFunctionCode->m_strNotes.c_str(), pFunctionCode->m_strNotes.length(), sizeof(char), pFile);
+			}
+			else
+			{
+				sprintf_safe(szTemp, 200, "//Exec C_API %s\n", obj_Function_Info.m_szDesc);
+				fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+			}
 			sprintf_safe(szTemp, 200, "void Exec_%s(", obj_Function_Info.m_szFunctionName);
 			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
-			//比较是否有用到的函数头
-			string strCode;
-			Search_CAPI_Code(obj_Function_Info.m_szFunctionName, obj_H_File_Info, strCode);
 
 			int nInPos = 0;
 			for(int k = 0; k < (int)obj_Function_Info.m_vecParamList.size(); k++)
@@ -1641,6 +1649,12 @@ bool Create_Cpp_Exec_File( _Project_Cpp_Info* pCppProject )
 		{
 			if(obj_H_File_Info.m_vecFunctionCode[m].m_blIsUsed == false)
 			{
+				if(obj_H_File_Info.m_vecFunctionCode[m].m_strNotes.length() > 0)
+				{
+					fwrite(obj_H_File_Info.m_vecFunctionCode[m].m_strNotes.c_str(), 
+						obj_H_File_Info.m_vecFunctionCode[m].m_strNotes.length(), 
+						sizeof(char), pFile);
+				}
 				fwrite(obj_H_File_Info.m_vecFunctionCode[m].m_strFuncCode.c_str(), 
 					obj_H_File_Info.m_vecFunctionCode[m].m_strFuncCode.length(), sizeof(char), pFile);
 				sprintf_safe(szTemp, 200, "\n");
@@ -1690,14 +1704,24 @@ bool Create_Cpp_Exec_File( _Project_Cpp_Info* pCppProject )
 		for(int j = 0; j < (int)pCppProject->m_vecCppFileList[i].m_vecFunctionList.size(); j++)
 		{
 			_Function_Info& obj_Function_Info = (_Function_Info& )pCppProject->m_vecCppFileList[i].m_vecFunctionList[j];
-			sprintf_safe(szTemp, 200, "//Exec C_API %s\n", obj_Function_Info.m_szDesc);
-			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+			//比较是否有用到的函数头
+			_FunctionCode* pFunctionCode = NULL;
+			Search_CAPI_Code(obj_Function_Info.m_szFunctionName, obj_CPP_File_Info, pFunctionCode);
+
+			if(pFunctionCode != NULL && pFunctionCode->m_strNotes.length() > 0)
+			{
+				fwrite(pFunctionCode->m_strNotes.c_str(), 
+					pFunctionCode->m_strNotes.length(), 
+					sizeof(char), pFile);
+			}
+			else
+			{
+				sprintf_safe(szTemp, 200, "//Exec C_API %s\n", obj_Function_Info.m_szDesc);
+				fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
+			}
+
 			sprintf_safe(szTemp, 200, "void Exec_%s(", obj_Function_Info.m_szFunctionName);
 			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-
-			//比较是否有用到的函数头
-			string strCode;
-			Search_CAPI_Code(obj_Function_Info.m_szFunctionName, obj_CPP_File_Info, strCode);
 
 			int nInPos = 0;
 			for(int k = 0; k < (int)obj_Function_Info.m_vecParamList.size(); k++)
@@ -1835,9 +1859,9 @@ bool Create_Cpp_Exec_File( _Project_Cpp_Info* pCppProject )
 			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 			sprintf_safe(szTemp, 200, "{\n", obj_Function_Info.m_szFunctionName);
 			fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-			if(strCode.length() > 0)
+			if(NULL != pFunctionCode && pFunctionCode->m_strCode.length() > 0)
 			{
-				fwrite(strCode.c_str(), strCode.length(), sizeof(char), pFile);
+				fwrite(pFunctionCode->m_strCode.c_str(), pFunctionCode->m_strCode.length(), sizeof(char), pFile);
 			}
 			else
 			{
@@ -1854,6 +1878,11 @@ bool Create_Cpp_Exec_File( _Project_Cpp_Info* pCppProject )
 		{
 			if(obj_CPP_File_Info.m_vecFunctionCode[m].m_blIsUsed == false)
 			{
+				if(obj_CPP_File_Info.m_vecFunctionCode[m].m_strNotes.length() > 0)
+				{
+					fwrite(obj_CPP_File_Info.m_vecFunctionCode[m].m_strNotes.c_str(), 
+						obj_CPP_File_Info.m_vecFunctionCode[m].m_strNotes.length(), sizeof(char), pFile);
+				}
 				fwrite(obj_CPP_File_Info.m_vecFunctionCode[m].m_strFuncCode.c_str(), 
 					obj_CPP_File_Info.m_vecFunctionCode[m].m_strFuncCode.length(), sizeof(char), pFile);
 				sprintf_safe(szTemp, 200, "{\n");

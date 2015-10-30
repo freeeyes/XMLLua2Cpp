@@ -72,13 +72,19 @@ void Parse_File_Function_Info(char* pData, int nFileSize, _File_Info& obj_File_I
 	bool blIsContent   = false;
 
 	char szTag[100] = {'\0'};
-	memcpy(szTag, CAPI_INCLUDE_END, strlen(CAPI_INCLUDE_END) - 1);
-	szTag[strlen(CAPI_INCLUDE_END) - 1] = '\0';
+	memcpy(szTag, CAPI_INCLUDE_END, strlen(CAPI_INCLUDE_END) - 2);
+	szTag[strlen(CAPI_INCLUDE_END) - 2] = '\0';
 
 	char* pIncludeEnd = strstr(pData, szTag);
 	int nPos = (int)(pIncludeEnd - pData) + (int)strlen(CAPI_INCLUDE_END);
 
+	if(nPos < 0)
+	{
+		return;
+	}
+
 	nLineBegin = nPos;
+	string strNotes = "";
 	for(int i = nPos; i < nFileSize; i++)
 	{
 		if(pData[i] == '\n')
@@ -94,18 +100,26 @@ void Parse_File_Function_Info(char* pData, int nFileSize, _File_Info& obj_File_I
 				if(szLine[0] == '{')
 				{
 					blIsContent = true;
-					nLineBegin = i + 1;
+					strNotes    = "";
+					nLineBegin  = i + 1;
 					continue;
 				}
 				else if(szLine[0] == '}')
 				{
 					blIsContent = false;
-					nLineBegin = i + 1;
+					strNotes    = "";
+					nLineBegin  = i + 1;
 					continue;
 				}
 
 				if(false == blIsContent)
 				{
+					//如果是函数头注释，则记录
+					if(szLine[0] == '/' && szLine[1] == '/')
+					{
+						strNotes += (string)szLine;
+					}
+
 					//如果文本第一个字节不是#,\n,\r,\中的任何一个，则视为
 					if(szLine[0] != '#' && szLine[0] != '\r' &&
 						szLine[0] != '\n' && szLine[0] != '/')
@@ -113,8 +127,10 @@ void Parse_File_Function_Info(char* pData, int nFileSize, _File_Info& obj_File_I
 						//这个为函数头
 						_FunctionCode obj_FunctionCode;
 						obj_FunctionCode.m_strFuncCode = (string)szLine;
+						obj_FunctionCode.m_strNotes    = strNotes;
 						Parse_Function_Name(szLine, obj_FunctionCode.m_szFuncName);
 						obj_File_Info.m_vecFunctionCode.push_back(obj_FunctionCode);
+						strNotes = "";
 					}
 				}
 				else
@@ -181,7 +197,7 @@ bool Parse_CAPI_File(const char* pFileName, _File_Info& obj_File_Info)
 	return true;
 }
 
-bool Search_CAPI_Code(const char* pFuncName, _File_Info& obj_File_Info, string& strCode)
+bool Search_CAPI_Code(const char* pFuncName, _File_Info& obj_File_Info, _FunctionCode*& pFunctionCode)
 {
 	char szFunctionName[100] = {'\0'};
 	sprintf_safe(szFunctionName, 100, "Exec_%s", pFuncName);
@@ -192,7 +208,7 @@ bool Search_CAPI_Code(const char* pFuncName, _File_Info& obj_File_Info, string& 
 		if(strcmp(obj_FunctionCode.m_szFuncName, szFunctionName) == 0)
 		{
 			//如果找到了
-			strCode = obj_FunctionCode.m_strCode;
+			pFunctionCode = &obj_FunctionCode;
 			obj_FunctionCode.m_blIsUsed = true;
 			return true;
 		}

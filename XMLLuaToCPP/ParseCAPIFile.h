@@ -6,7 +6,7 @@
 using namespace std ;
 
 #define CAPI_INCLUDE_BEGIN "//add your Include file under at here, don't delete this!\n"
-#define CAPI_INCLUDE_END "//add your Include file end, don't delete this!\n"
+#define CAPI_INCLUDE_END "//add your Include file end, don't delete this!\n\n"
 
 //记录引用的函数体代码
 struct _FunctionCode
@@ -14,6 +14,7 @@ struct _FunctionCode
 	char   m_szFuncName[200];  //函数名
 	string m_strFuncCode;      //函数声明代码
 	string m_strCode;          //函数代码
+	string m_strNotes;         //函数代码声明注释
 	bool   m_blIsUsed;
 
 	_FunctionCode()
@@ -43,6 +44,7 @@ void Parse_File_Function_Info(char* pData, int nFileSize, _File_Info& obj_File_I
 //解析文件中所包含的头文件
 bool Parse_CAPI_File(const char* pFileName, _File_Info& obj_File_Info);
 
-bool Search_CAPI_Code(const char* pFuncName, _File_Info& obj_File_Info, string& strCode);
+//查找指定的函数对应的信息
+bool Search_CAPI_Code(const char* pFuncName, _File_Info& obj_File_Info, _FunctionCode*& pFunctionCode);
 
 #endif
