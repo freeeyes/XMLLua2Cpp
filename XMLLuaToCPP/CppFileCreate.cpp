@@ -1320,39 +1320,6 @@ bool Create_User_Data_Interface_Head_Files(_Base_Data_Group* pBaseDataGroup)
 	sprintf_safe(szTemp, 200, "#define _USER_DATA_INTERFACE_H_\n\n");
 	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
 
-	sprintf_safe(szTemp, 200, "#ifdef __cplusplus\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-
-	sprintf_safe(szTemp, 200, "extern \"C\"\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-
-	sprintf_safe(szTemp, 200, "{\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-
-	sprintf_safe(szTemp, 200, "#endif\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-
-	sprintf_safe(szTemp, 200, "#include \"lua.h\"\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-
-	sprintf_safe(szTemp, 200, "#include \"lualib.h\"\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-
-	sprintf_safe(szTemp, 200, "#include \"lauxlib.h\"\n\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-
-	//sprintf_safe(szTemp, 200, "int luaopen_lualib(lua_State * L);\n\n");
-	//fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-
-	sprintf_safe(szTemp, 200, "#ifdef __cplusplus\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-
-	sprintf_safe(szTemp, 200, "}\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-
-	sprintf_safe(szTemp, 200, "#endif\n\n");
-	fwrite(szTemp, strlen(szTemp), sizeof(char), pFile);
-
 	for(int i = 0; i < (int)pBaseDataGroup->m_vecBaseDataStruct.size(); i++)
 	{
 		//Éú³ÉStruct
