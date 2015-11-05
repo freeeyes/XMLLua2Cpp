@@ -219,12 +219,18 @@ bool CXmlOpeation::Parse_XML_File_Lua( const char* pName, _Project_Lua_Info* pLu
 				{
 					obj_Function_Param.m_emParamType = PARAM_TYPE_OUT;
 				}
+
 				if(strcmp(pParamElement->Attribute("ParamClass"), "int") == 0)
 				{
 					sprintf_safe(obj_Function_Param.m_szParamType, MAX_BUFF_50, "%s", pParamElement->Attribute("ParamClass"));
 					obj_Function_Param.m_emParamClass = PARAM_CLASS_INT;
 				}
 				else if(strcmp(pParamElement->Attribute("ParamClass"), "string") == 0)
+				{
+					sprintf_safe(obj_Function_Param.m_szParamType, MAX_BUFF_50, "%s", pParamElement->Attribute("ParamClass"));
+					obj_Function_Param.m_emParamClass = PARAM_CLASS_STRING;
+				}
+				else if(strcmp(pParamElement->Attribute("ParamClass"), "char*") == 0)
 				{
 					sprintf_safe(obj_Function_Param.m_szParamType, MAX_BUFF_50, "%s", pParamElement->Attribute("ParamClass"));
 					obj_Function_Param.m_emParamClass = PARAM_CLASS_STRING;
