@@ -83,7 +83,7 @@ void Create_Lua_Environment( _Project_Lua_Info* pLuaProject )
 {
 	char szTempPath[50]   = {'\0'};
 	char szTempFile[100]  = {'\0'};
-
+	
 	//´´½¨LuaIncodeÄ¿Â¼
 	sprintf_safe(szTempPath, 50, "%s/LuaCppWrapper", pLuaProject->m_szProjectName);
 #ifdef WIN32
