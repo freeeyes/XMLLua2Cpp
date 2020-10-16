@@ -1,5 +1,5 @@
 # XMLLua2Cpp
-Generate Lua/C++ code and test code through XML automatically
+Generate Lua/C++ code and test code through XML automatically....
 
 本来想用英文来写此文档，但是实在是英文能力有限，先用中文吧，以后可以添加。
 
